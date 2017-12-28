@@ -1,0 +1,7 @@
+#load @"../../yaml-parser/.paket/load/System.Linq.fsx" 
+#load @"../../yaml-parser/.paket/load/System.ObjectModel.fsx" 
+#load @"../../yaml-parser/.paket/load/System.Reflection.Emit.fsx" 
+#load @"../../yaml-parser/.paket/load/System.Reflection.Emit.ILGeneration.fsx" 
+#load @"../../yaml-parser/.paket/load/System.Reflection.Emit.Lightweight.fsx" 
+#load @"../../yaml-parser/.paket/load/System.Threading.fsx" 
+#r "C:/Users/mdg/.nuget/packages/system.linq.expressions/4.3.0/lib/netstandard1.6/System.Linq.Expressions.dll" 
