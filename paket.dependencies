@@ -3,4 +3,12 @@ framework: netcoreapp2.0
 storage: none
 generate_load_scripts: true
 
+nuget Expecto
 nuget FParsec
+
+group build
+  source https://www.nuget.org/api/v2
+  framework: net461
+  generate_load_scripts: false
+
+  nuget FAKE

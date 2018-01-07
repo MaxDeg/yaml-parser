@@ -1,1 +1,0 @@
-#r "C:/Users/mdg/.nuget/packages/system.security.cryptography.openssl/4.4.0/lib/netstandard2.0/System.Security.Cryptography.OpenSsl.dll" 

@@ -2,10 +2,12 @@
 // FAKE build script
 // --------------------------------------------------------------------------------------
 
-#r "./packages/FAKE/tools/FakeLib.dll"
+#r "./packages/build/FAKE/tools/FakeLib.dll"
 
 open Fake
+
 open System
+open System.IO
 
 // --------------------------------------------------------------------------------------
 // Build variables
@@ -13,7 +15,7 @@ open System
 
 let buildDir  = "./build/"
 let appReferences = !! "/**/*.fsproj"
-let dotnetcliVersion = "2.0.2"
+let dotnetcliVersion = "2.1.3"
 let mutable dotnetExePath = "dotnet"
 
 // --------------------------------------------------------------------------------------
@@ -67,6 +69,11 @@ Target "Build" (fun _ ->
     )
 )
 
+Target "Tests" <| fun _ ->
+    appReferences
+    |> Seq.filter (fun p -> p.Contains "tests")
+    |> Seq.iter (fun p -> runDotnet (Path.GetDirectoryName p) "run")
+
 // --------------------------------------------------------------------------------------
 // Build order
 // --------------------------------------------------------------------------------------
@@ -75,5 +82,6 @@ Target "Build" (fun _ ->
   ==> "InstallDotNetCLI"
   ==> "Restore"
   ==> "Build"
+  ==> "Tests"
 
-RunTargetOrDefault "Build"
+RunTargetOrDefault "Tests"

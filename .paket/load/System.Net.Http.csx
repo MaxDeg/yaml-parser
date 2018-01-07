@@ -1,7 +1,0 @@
-#load "../../yaml-parser/.paket/load/System.IO.FileSystem.csx" 
-#load "../../yaml-parser/.paket/load/System.Security.Cryptography.Algorithms.csx" 
-#load "../../yaml-parser/.paket/load/System.Security.Cryptography.Encoding.csx" 
-#load "../../yaml-parser/.paket/load/System.Security.Cryptography.OpenSsl.csx" 
-#load "../../yaml-parser/.paket/load/System.Security.Cryptography.Primitives.csx" 
-#load "../../yaml-parser/.paket/load/System.Security.Cryptography.X509Certificates.csx" 
-#load "../../yaml-parser/.paket/load/System.Threading.csx" 

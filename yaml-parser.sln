@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "yaml-parser", "yaml-parser\yaml-parser.fsproj", "{802E3A5B-53C1-463A-AC9E-654AC89E0D57}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "yaml-parser-tests", "yaml-parser-tests\yaml-parser-tests.fsproj", "{054D577E-7364-4238-9622-77B457117A47}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{802E3A5B-53C1-463A-AC9E-654AC89E0D57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{802E3A5B-53C1-463A-AC9E-654AC89E0D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{802E3A5B-53C1-463A-AC9E-654AC89E0D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{802E3A5B-53C1-463A-AC9E-654AC89E0D57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{054D577E-7364-4238-9622-77B457117A47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{054D577E-7364-4238-9622-77B457117A47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{054D577E-7364-4238-9622-77B457117A47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{054D577E-7364-4238-9622-77B457117A47}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0BE8D581-14A2-4A93-A11C-3F492FCD843F}
+	EndGlobalSection
+EndGlobal

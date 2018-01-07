@@ -3,6 +3,14 @@ STORAGE: NONE
 RESTRICTION: == netcoreapp2.0
 NUGET
   remote: https://www.nuget.org/api/v2
+    Argu (4.1)
+      FSharp.Core (>= 4.2.3)
+      System.Configuration.ConfigurationManager (>= 4.4)
+    Expecto (5.1.1)
+      Argu (>= 3.7)
+      FSharp.Core (>= 4.1.18)
+      Mono.Cecil (>= 0.10.0-beta5)
+      System.Diagnostics.FileVersionInfo (>= 4.3)
     FParsec (1.0.3)
       FSharp.Core (>= 4.2.3)
       NETStandard.Library (>= 1.6.1)
@@ -32,6 +40,15 @@ NUGET
       System.Threading.Timer (>= 4.0.1)
     Microsoft.NETCore.Platforms (2.0.1)
     Microsoft.NETCore.Targets (2.0)
+    Mono.Cecil (0.10.0-beta7)
+      System.Collections (>= 4.0.11)
+      System.IO.FileSystem (>= 4.0.1)
+      System.IO.FileSystem.Primitives (>= 4.0.1)
+      System.Reflection (>= 4.1)
+      System.Runtime.Extensions (>= 4.1)
+      System.Security.Cryptography.Algorithms (>= 4.2)
+      System.Security.Cryptography.Csp (>= 4.0)
+      System.Threading (>= 4.0.11)
     NETStandard.Library (2.0.1)
       Microsoft.NETCore.Platforms (>= 1.1)
     runtime.debian.8-x64.runtime.native.System.Security.Cryptography.OpenSsl (4.3.2)
@@ -79,6 +96,8 @@ NUGET
       System.Runtime.Extensions (>= 4.3)
       System.Threading (>= 4.3)
       System.Threading.Tasks (>= 4.3)
+    System.Configuration.ConfigurationManager (4.4.1)
+      System.Security.Cryptography.ProtectedData (>= 4.4)
     System.Console (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
@@ -90,6 +109,16 @@ NUGET
       Microsoft.NETCore.Targets (>= 1.1)
       System.Runtime (>= 4.3)
     System.Diagnostics.DiagnosticSource (4.4.1)
+    System.Diagnostics.FileVersionInfo (4.3)
+      Microsoft.NETCore.Platforms (>= 1.1)
+      System.Globalization (>= 4.3)
+      System.IO (>= 4.3)
+      System.IO.FileSystem (>= 4.3)
+      System.IO.FileSystem.Primitives (>= 4.3)
+      System.Reflection.Metadata (>= 1.4.1)
+      System.Runtime (>= 4.3)
+      System.Runtime.Extensions (>= 4.3)
+      System.Runtime.InteropServices (>= 4.3)
     System.Diagnostics.Tools (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
@@ -247,6 +276,7 @@ NUGET
       Microsoft.NETCore.Targets (>= 1.1)
       System.Reflection (>= 4.3)
       System.Runtime (>= 4.3)
+    System.Reflection.Metadata (1.5)
     System.Reflection.Primitives (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
@@ -335,6 +365,7 @@ NUGET
       System.Runtime (>= 4.3)
       System.Threading (>= 4.3)
       System.Threading.Tasks (>= 4.3)
+    System.Security.Cryptography.ProtectedData (4.4)
     System.Security.Cryptography.X509Certificates (4.3.2)
       Microsoft.NETCore.Platforms (>= 1.1)
       runtime.native.System (>= 4.3)
@@ -392,3 +423,10 @@ NUGET
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
       System.Runtime (>= 4.3)
+
+GROUP build
+GENERATE-LOAD-SCRIPTS: OFF
+RESTRICTION: == net461
+NUGET
+  remote: https://www.nuget.org/api/v2
+    FAKE (4.64.3)

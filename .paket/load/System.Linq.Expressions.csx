@@ -1,7 +1,0 @@
-#load "../../yaml-parser/.paket/load/System.Linq.csx" 
-#load "../../yaml-parser/.paket/load/System.ObjectModel.csx" 
-#load "../../yaml-parser/.paket/load/System.Reflection.Emit.csx" 
-#load "../../yaml-parser/.paket/load/System.Reflection.Emit.ILGeneration.csx" 
-#load "../../yaml-parser/.paket/load/System.Reflection.Emit.Lightweight.csx" 
-#load "../../yaml-parser/.paket/load/System.Threading.csx" 
-#r "C:/Users/mdg/.nuget/packages/system.linq.expressions/4.3.0/lib/netstandard1.6/System.Linq.Expressions.dll" 

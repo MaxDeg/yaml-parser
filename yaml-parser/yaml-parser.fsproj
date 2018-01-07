@@ -4,11 +4,12 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="prelude.fs" />
     <Compile Include="types.fs" />
     <Compile Include="primitives.fs" />
-    <Compile Include="flow-types.fs" />
-    <Compile Include="block-types.fs" />
-    <Compile Include="yaml-parser.fs" />
+    <Compile Include="flow-styles.fs" />
+    <Compile Include="block-styles.fs" />
+    <Compile Include="parser.fs" />
     <Content Include="script.fsx" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

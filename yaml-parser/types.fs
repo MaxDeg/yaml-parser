@@ -2,16 +2,14 @@ module YamlParser.Types
 
 open FParsec
 
-type Node = Mapping of Map<Node, Node>
-          | Sequence of Node list
-          | Scalar of string
-          | ScalarFloat of float
-          | ScalarInt32 of int32
-          | ScalarInt64 of int64
-          | Comment of string
-          | Null
-          | Boolean of bool
-          | Empty
+type Value = Mapping of Map<Value, Value>
+           | Sequence of Value list
+           | String of string
+           | Boolean of bool
+           | Decimal of decimal
+           | Comment of string
+           | Null
+           | Empty
 
 type Context = BlockKey
              | BlockIn
@@ -26,4 +24,4 @@ type Chomping = Strip
 
 type Indentation = int64
 
-type IndentParser<'a, 'state> = Context -> Indentation -> Parser<'a, 'state>
+type IndentParser<'a> = Context -> Indentation -> Parser<'a, unit>

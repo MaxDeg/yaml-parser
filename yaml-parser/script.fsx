@@ -1,14 +1,34 @@
-#load "../.paket/load/main.group.fsx"
+#load "../.paket/load/netcoreapp2.0/main.group.fsx"
+#load "prelude.fs"
 #load "types.fs"
 #load "primitives.fs"
 #load "block-styles.fs"
 #load "flow-styles.fs"
-
-open YamlParser.Types
-open YamlParser.Primitives
-open YamlParser.BlockStyle
-open YamlParser.FlowStyle
+#load "parser.fs"
 
 open FParsec
 
-let yamlParser = whitespaces >>. YamlParser.Primitives.parser .>> whitespaces .>> eof
+open YamlParser
+open YamlParser.Types
+
+#time
+
+Parser.run @"- 1
+-   true
+- 3"
+
+Parser.run @"   - 1
+   - 2"
+
+Parser.run @"? - 1
+  - 2
+: 3"
+
+Parser.run @"? - 1
+  - 2 : 3
+: 4"
+
+Parser.run @"- ::vector
+- Up, up, and away!
+- -123
+- http://example.com/foo#bar"

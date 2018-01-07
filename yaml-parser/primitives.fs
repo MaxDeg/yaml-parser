@@ -5,14 +5,16 @@ open YamlParser.Types
 open FParsec
 
 
-let parser, parserRef =
-  let pdummy : IndentParser<_, _> =
-    fun ctx indent stream ->
+let createForwardParserRef() =
+  let pdummy : IndentParser<Value> =
+    fun _ _ _ ->
       failwith "a parser created with createParserForwardedToRef is not initialized"
   
-  let r : IndentParser<_, _> ref = ref pdummy
+  let r : IndentParser<Value> ref = ref pdummy
 
   (fun ctx indent stream -> !r ctx indent stream), r
+
+let parser, parserRef = createForwardParserRef()
 
 (*
   Debugging/Tracing operator
@@ -30,48 +32,81 @@ let (<!>) (p: Parser<_,_>) label : Parser<_,_> =
 
 
 let space = '\x20'
-let tab = '\x09'
+let tabulation = '\x09'
 let lineFeed = '\x0A'
 let carriageReturn = '\x0D'
 
-let lineBreak = 
+let lineBreak : Parser<_, unit> = 
   manySatisfy (fun c -> c = lineFeed || c = carriageReturn)
 
-let lineBreak1 =
+let lineBreak1 : Parser<_, unit> =
   many1Satisfy (fun c -> c = lineFeed || c = carriageReturn)
 
-let whitespaces = manySatisfy (fun c -> c = space || c = tab)
+let skipLineBreak : Parser<_, unit> = 
+  skipManySatisfy (fun c -> c = lineFeed || c = carriageReturn)
 
-let whitespaces1 = many1Satisfy (fun c -> c = space || c = tab)
+let skipLineBreak1 : Parser<_, unit> =
+  skipMany1Satisfy (fun c -> c = lineFeed || c = carriageReturn)
 
-let pnull = stringReturn "null" Null
-let ptrue = stringReturn "true" <| Boolean true
-let pfalse = stringReturn "false" <| Boolean false
-let pnumber =
-      (attempt pfloat |>> ScalarFloat)
-  <|> (attempt pint32 |>> ScalarInt32)
-  <|> (attempt pint64 |>> ScalarInt64)
+let whitespaces : Parser<_, unit> =
+  manySatisfy (fun c -> c = space || c = tabulation)
+
+let whitespaces1 : Parser<_, unit> =
+  many1Satisfy (fun c -> c = space || c = tabulation)
+  
+let skipWhitespaces1 : Parser<_, unit> =
+  skipMany1Satisfy (fun c -> c = space || c = tabulation)
+
+let spaceBreaks : Parser<_, unit> =
+  manySatisfy (fun c -> c = space || c = tabulation || c = lineFeed || c = carriageReturn)
+
+let lineStart : Parser<_, unit> =
+  getPosition >>= fun pos -> 
+    if pos.Column = 1L then preturn ()
+    else pzero
+    
+let separateInLine = skipWhitespaces1 <|> lineStart
+
+let pnull : Parser<_, unit> = stringReturn "null" Null
+let ptrue : Parser<_, unit> = stringReturn "true" <| Boolean true
+let pfalse : Parser<_, unit> = stringReturn "false" <| Boolean false
+let pnumber : Parser<_, unit> = (attempt pfloat) |>> (decimal >> Decimal)
 
 let comment = 
-      attempt (pstring "#")
+      separateInLine
+  >>? pstring "#"
   >>? whitespaces
   >>. restOfLine false
   |>> Comment
 
+let empty : Parser<_, unit> = preturn Empty
 
-let sameIndentation indent =
+// let separate ctx indent =
+//   match ctx with
+//   | BlockOut | BlockIn
+//   | FlowOut  | FlowIn   -> <|> separateInLine
+//   | BlockKey | FlowKey  -> separateInLine
+
+
+let checkIndentation indent =
   getPosition >>= fun pos ->
     if pos.Column = indent then
-      preturn () <!> "same or indentation"
+      preturn () //<!> "same indentation"
     else
-      fail "wrong indentation" <!> sprintf "wrong identation %i <> %i" pos.Column indent
+      pzero <!> sprintf "wrong identation %i <> %i" pos.Column indent
 
 let withPos p =
   getPosition >>= fun pos ->
     p pos.Column <!> sprintf "position > %i" pos.Column
 
-let block (p : IndentParser<_,_>) =
-  withPos <|
-    fun i -> many1 (sameIndentation i >>. p ) <!> "block"
+// let block (p : IndentParser<_,_>) =
+//   withPos <|
+//     fun i -> many1 (checkIndentation i >>. p ) <!> "block"
 
-
+let indentation minimalIndent = 
+  whitespaces
+  >>. getPosition >>= fun pos ->
+    if pos.Column >= minimalIndent then
+      preturn pos.Column
+    else
+      pzero <!> sprintf "minimal indentation of %i required" minimalIndent
