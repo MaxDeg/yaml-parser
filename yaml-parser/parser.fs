@@ -7,8 +7,8 @@ open YamlParser.Primitives
 open FParsec
 
 parserRef := fun ctx indent ->
-  choice  [ FlowStyle.parser ctx indent
-            BlockStyle.parser ctx indent
+  choice  [ BlockStyle.parser ctx indent
+            FlowStyle.parser ctx indent
             comment
             empty
           ]
