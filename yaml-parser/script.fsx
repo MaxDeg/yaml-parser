@@ -32,3 +32,24 @@ Parser.run @"- ::vector
 - Up, up, and away!
 - -123
 - http://example.com/foo#bar"
+
+Parser.run @"[
+# my comment
+""double
+ quoted"", 'single
+           quoted',
+   [ nested ]
+]"
+
+Parser.run @"- [ one, two, ]
+- [three ,four]"
+
+Parser.run @"[ 1, 2,
+3
+, 4
+,
+5]"
+
+
+Parser.run @"'quoted key':
+- entry"

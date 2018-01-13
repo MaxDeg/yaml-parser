@@ -25,3 +25,7 @@ type Chomping = Strip
 type Indentation = int64
 
 type IndentParser<'a> = Context -> Indentation -> Parser<'a, unit>
+
+type State =
+  { indent    : Indentation
+    context   : Context }

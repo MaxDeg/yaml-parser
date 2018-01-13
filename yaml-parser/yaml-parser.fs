@@ -58,7 +58,7 @@
 //       let plineBreak =
 //         manySatisfy (fun c -> c = lineFeed || c = carriageReturn)
 
-//       let plineBreak1 =
+//       let pmany1LineBreak =
 //         many1Satisfy (fun c -> c = lineFeed || c = carriageReturn)
 
 //       let pwhitespaces = manyStrings (pspace <|> ptab)
@@ -222,7 +222,7 @@
 //                       ]
 //               .>>? pwhitespaces
 //               .>>? pstring ":"
-//               .>>? (pwhitespaces1 <|> (pwhitespaces .>> plineBreak1 >>. pwhitespaces))
+//               .>>? (pwhitespaces1 <|> (pwhitespaces .>> pmany1LineBreak >>. pwhitespaces))
 //               <!> "map-separator"
 
 //             block (

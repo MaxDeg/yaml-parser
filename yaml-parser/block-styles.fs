@@ -9,22 +9,20 @@ module Scalars =
   let parser ctx indent = fail "not implemented"
 
 module Collections =
+  let private psep indent = 
+        whitespaces
+    >>? skipMany1LineBreak
+    >>? skipWhitespaces
+    >>? checkIndentation indent
   
   let sequence _ minimalIndent =
     let pitem indent =
-          whitespaces
-      >>? pstring "-"
+          pstring "-"
       >>? whitespaces1
       >>. parser BlockIn indent
       <!> "seq-item"
 
-    let psep indent = 
-          whitespaces
-      >>? skipLineBreak1
-      >>? checkIndentation indent
-
     indentation minimalIndent >>= fun indent ->
-      //many1 (pitem indent) <!> "seq"
       sepBy1 (pitem indent) (psep indent) <!> "seq"
       |>> Sequence
 
@@ -34,7 +32,7 @@ module Collections =
           pstring "?"
       >>.  whitespaces1
       >>.  parser BlockOut (indent + 1L)
-      .>>  lineBreak
+      .>>  manyLineBreak
       .>>  checkIndentation indent
       .>>  pstring ":"
       .>>  whitespaces1
@@ -50,24 +48,15 @@ module Collections =
       <!>  "implicit-map-item"
 
     let pitem indent =
-          whitespaces
-      >>? checkIndentation indent
-      >>. (explicitItem indent <|> implicitItem indent)
+      (explicitItem indent)// Buggy code <|> implicitItem indent)
     
-    let psep indent = 
-          whitespaces
-      >>? skipLineBreak1
-      >>? checkIndentation indent
-
     indentation minimalIndent >>= fun indent ->
-      //many1 (pitem indent) <!> "map"
       sepBy1 (pitem indent) (psep indent) <!> "map"
       |>> (Map.ofList >> Mapping)
 
   let parser ctx indent = 
-    choice [ sequence ctx (match ctx with BlockOut -> indent - 1L | _ -> indent)
-             mapping ctx indent
-           ]
+        sequence ctx (match ctx with BlockOut -> indent - 1L | _ -> indent)
+    <|> mapping ctx indent
 
 
 let parser ctx indent = Collections.parser ctx indent

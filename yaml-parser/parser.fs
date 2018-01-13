@@ -9,7 +9,6 @@ open FParsec
 parserRef := fun ctx indent ->
   choice  [ BlockStyle.parser ctx indent
             FlowStyle.parser ctx indent
-            comment
             empty
           ]
 
