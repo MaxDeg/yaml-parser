@@ -1,22 +1,24 @@
 module YamlParser.Parser
 
+open Prelude
+
 open YamlParser
 open YamlParser.Types
 open YamlParser.Primitives
 
 open FParsec
 
-parserRef := fun ctx indent ->
-  choice  [ BlockStyle.parser ctx indent
-            FlowStyle.parser ctx indent
-            empty
-          ]
+parserRef := choice  [ BlockStyle.parser
+                       FlowStyle.parser
+                       //empty
+                     ]
 
-let bareDocument =
-      whitespaces
-  >>. parser BlockIn 0L
-  .>> whitespaces
-  .>> eof
+let bareDocument = BlockStyle.parser
 
 let run str = 
-  run bareDocument str
+  runParserOnString
+    bareDocument
+    { indent  = 0L
+      context = BlockIn }
+    "" // stream name
+    str

@@ -7,7 +7,7 @@ type Value = Mapping of Map<Value, Value>
            | String of string
            | Boolean of bool
            | Decimal of decimal
-           | Comment of string
+           | Comment of string list
            | Null
            | Empty
 
@@ -24,8 +24,6 @@ type Chomping = Strip
 
 type Indentation = int64
 
-type IndentParser<'a> = Context -> Indentation -> Parser<'a, unit>
-
 type State =
-  { indent    : Indentation
-    context   : Context }
+  { indent  : Indentation
+    context : Context }

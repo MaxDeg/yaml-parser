@@ -5,7 +5,10 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="flow-styles-tests.fs" />
+    <Compile Include="prelude.fs" />
+    <Compile Include="flow-scalar.fs" />
+    <Compile Include="flow-sequence.fs" />
+    <Compile Include="block-sequence.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>

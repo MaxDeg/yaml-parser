@@ -5,59 +5,68 @@ open YamlParser.Primitives
 
 open FParsec
 
+let private blockParser, blockParserRef = createParserForwardedToRef<Value, State>()
+
 module Scalars =
-  let parser ctx indent = fail "not implemented"
+  let parser : Parser<Value, State> = fail "not implemented"
 
 module Collections =
-  let private psep indent = 
+  let private psep = 
         whitespaces
     >>? skipMany1LineBreak
     >>? skipWhitespaces
-    >>? checkIndentation indent
-  
-  let sequence _ minimalIndent =
-    let pitem indent =
+    >>? checkIndentation
+
+
+  let indentedBlock =
+    blockParser //<|> comments
+
+  let sequence =
+    let pitem =
           pstring "-"
-      >>? whitespaces1
-      >>. parser BlockIn indent
+      >>? followedBy whitespaces1
+      >>. withContext BlockIn indentedBlock
       <!> "seq-item"
 
-    indentation minimalIndent >>= fun indent ->
-      sepBy1 (pitem indent) (psep indent) <!> "seq"
-      |>> Sequence
+    withIndentation >>? many1 (checkIndentation >>? pitem)
+    <!> "seq"
+    |>> Sequence
 
 
-  let mapping _ minimalIndent =
-    let explicitItem indent = 
+  let mapping =
+    let explicitItem = 
           pstring "?"
       >>.  whitespaces1
-      >>.  parser BlockOut (indent + 1L)
+      >>.  withContext BlockOut (withHigherIndentation parser)
       .>>  manyLineBreak
-      .>>  checkIndentation indent
+      .>>  checkIndentation
       .>>  pstring ":"
       .>>  whitespaces1
-      .>>. parser BlockOut indent
+      .>>. (withContext BlockOut parser)
       <!>  "explicit-map-item"
     
-    let implicitItem indent =
-          parser BlockOut (indent + 1L)
+    let implicitItem =
+          withContext BlockOut (withHigherIndentation parser)
       .>>?  whitespaces
       .>>? pstring ":"
       .>>  whitespaces1
-      .>>. parser BlockKey indent
+      .>>. (withContext BlockKey parser)
       <!>  "implicit-map-item"
 
-    let pitem indent =
-      (explicitItem indent)// Buggy code <|> implicitItem indent)
+    let pitem =
+      explicitItem// Buggy code <|> implicitItem
     
-    indentation minimalIndent >>= fun indent ->
-      sepBy1 (pitem indent) (psep indent) <!> "map"
+    withSameOrHigherIndentation <|
+      sepBy1 pitem psep <!> "map"
       |>> (Map.ofList >> Mapping)
 
-  let parser ctx indent = 
-        sequence ctx (match ctx with BlockOut -> indent - 1L | _ -> indent)
-    <|> mapping ctx indent
+  let parser = sequence //<|> mapping
 
 
-let parser ctx indent = Collections.parser ctx indent
-                    //<|> Scalars.parser ctx indent
+let flowInBlock = withContext FlowOut pseparate >>. FlowStyle.parser .>> comments <!> "flow in block"
+
+blockParserRef :=  Collections.parser
+             //  <|> Scalars.parser
+               <|> flowInBlock
+
+let parser = blockParser

@@ -1,9 +1,11 @@
+#time
+
 #load "../.paket/load/netcoreapp2.0/main.group.fsx"
 #load "prelude.fs"
 #load "types.fs"
 #load "primitives.fs"
-#load "block-styles.fs"
 #load "flow-styles.fs"
+#load "block-styles.fs"
 #load "parser.fs"
 
 open FParsec
@@ -11,7 +13,9 @@ open FParsec
 open YamlParser
 open YamlParser.Types
 
-#time
+
+Parser.run @"- 1
+- 2"
 
 Parser.run @"- 1
 -   true
@@ -19,6 +23,9 @@ Parser.run @"- 1
 
 Parser.run @"   - 1
    - 2"
+
+Parser.run @"- - one # Compact
+  - two # sequence"
 
 Parser.run @"? - 1
   - 2
