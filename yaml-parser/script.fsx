@@ -24,8 +24,8 @@ Parser.run @"- 1
 Parser.run @"   - 1
    - 2"
 
-Parser.run @"- - one # Compact
-  - two # sequence"
+Parser.run @"- - 'one' # Compact
+  - 'two' # sequence"
 
 Parser.run @"? - 1
   - 2

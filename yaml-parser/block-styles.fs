@@ -5,30 +5,30 @@ open YamlParser.Primitives
 
 open FParsec
 
-let private blockParser, blockParserRef = createParserForwardedToRef<Value, State>()
+let private blockParser, blockParserRef =
+  createParserForwardedToRef<Value, State>()
 
 module Scalars =
   let parser : Parser<Value, State> = fail "not implemented"
 
 module Collections =
+  let private indentedBlockParser, indentedBlockParserRef =
+    createParserForwardedToRef<Value, State>()
+  
   let private psep = 
         whitespaces
     >>? skipMany1LineBreak
     >>? skipWhitespaces
     >>? checkIndentation
 
-
-  let indentedBlock =
-    blockParser //<|> comments
-
   let sequence =
-    let pitem =
+    let seqEntry =
           pstring "-"
       >>? followedBy whitespaces1
-      >>. withContext BlockIn indentedBlock
-      <!> "seq-item"
+      >>. withContext BlockIn indentedBlockParser
+      <!> "seq-entry"
 
-    withIndentation >>? many1 (checkIndentation >>? pitem)
+    withIndentation >>? many1 (checkIndentation >>? seqEntry)
     <!> "seq"
     |>> Sequence
 
@@ -60,10 +60,18 @@ module Collections =
       sepBy1 pitem psep <!> "map"
       |>> (Map.ofList >> Mapping)
 
-  let parser = sequence //<|> mapping
+  indentedBlockParserRef := choice [ // compact sequence
+                                     (whitespaces1 >>? withIndentation >>? sequence)
+                                     // compact mapping
+                                     blockParser
+                                     comments
+                                   ]
+
+  let parser = comments .>> pseparate >>. sequence //<|> mapping
 
 
 let flowInBlock = withContext FlowOut pseparate >>. FlowStyle.parser .>> comments <!> "flow in block"
+
 
 blockParserRef :=  Collections.parser
              //  <|> Scalars.parser

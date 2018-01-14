@@ -42,8 +42,8 @@ let ``number sequence with initial indentation`` =
 
 let ``sequence of compact sequence`` =
   testCase "sequence of compact sequence" <| fun _ ->
-    test parser @"- - one # Compact
-  - two # sequence"
+    test parser @"- - 'one' # Compact
+  - 'two' # sequence"
     |> succeed (Expect.equal
                   "number list must be parsed properly"
                   (Sequence [ Sequence [ String "one"
