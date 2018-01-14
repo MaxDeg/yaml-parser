@@ -14,6 +14,25 @@ open YamlParser
 open YamlParser.Types
 
 
+Parser.run @"{
+'adjacent':value,
+'readable': value,
+'empty':
+}"
+
+Parser.run @"{
+? explicit: entry,
+implicit: entry,
+?
+}"
+
+Parser.run @"{
+unquoted : 'separate',
+http://foo.com,
+omitted value:,
+: omitted key,
+}"
+
 Parser.run @"- 1
 - 2"
 

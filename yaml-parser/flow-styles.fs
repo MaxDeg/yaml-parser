@@ -30,8 +30,8 @@ module Scalars =
         |> manySatisfy
       
       let exceptionChars =
-            (pstring ":" .>> notFollowedBy whitespaces1)
-        <|> (pstring "#" .>> previousCharSatisfies (fun c -> c <> space && c <> tabulation))
+            (pstring ":" .>>? notFollowedBy whitespaces1)
+        <|> (pstring "#" .>>? previousCharSatisfies (fun c -> c <> space && c <> tabulation))
       
       stringsSepBy normalChars exceptionChars <!> "accepted-char"
     
@@ -108,14 +108,16 @@ module Scalars =
       <!> "single-quoted"
       |>> String
 
-  let parser = choice [ pnull
-                        ptrue
-                        pfalse
-                        pnumber
-                        singleQuoted
-                        doubleQuoted
-                        plain
-                      ] <!> "scalar"
+  let yamlParser = choice [ pnull
+                            ptrue
+                            pfalse
+                            pnumber
+                            plain
+                          ]
+
+  let jsonParser = singleQuoted <|> doubleQuoted
+  
+  let parser = jsonParser <|> yamlParser <!> "scalar"
 
 
 module Collections = 
@@ -135,20 +137,42 @@ module Collections =
       (opt pseparate >>. seq)
     |>> Sequence
 
-  // let mapping _ indent =
-  //   let pitem = 
-  //     flowParser FlowIn indent <!> "flow-map-item"
+  let private pmapping, pmappingRef = createParserForwardedToRef<Value, State>()
+
+  let private mapping' =
+    let pentry = 
+      let implicitEntry =
+        let separateValue =
+          skipChar ':' >>? followedBy whitespaces1 >>. (pseparate >>. flowParser <|>% Empty) <!> "separate-value"
+        let adjacentValue =
+          skipChar ':' >>. (opt pseparate >>? flowParser <|>% Empty) <!> "adjacent-value"
+
+        choice [ (Scalars.jsonParser <|> sequence <|> pmapping <|>% Empty) .>> opt pseparate .>>.? adjacentValue
+                 Scalars.yamlParser .>>.? (opt pseparate >>? separateValue <|>% Empty)
+                 preturn Empty .>>.? separateValue
+               ]
+               <!> "map-entry"
+
+      let explicitEntry =
+        skipChar '?' >>. pseparate >>. (implicitEntry <|>% (Empty, Empty)) <!> "map-explicit-key"
+      
+      (explicitEntry <|> implicitEntry) .>> opt pseparate
     
-  //   between
-  //     (whitespaces .>> skipChar '{' .>> whitespaces .>> skipLineBreak)
-  //     (skipLineBreak >>. whitespaces >>. skipChar '}')
-  //     (sepEndBy pitem psep)
-  //   |>> (Map.ofList >> Mapping)
+    let map =
+      withContext FlowIn <| sepEndBy pentry psep
+    
+    between
+      (skipChar '{')
+      (skipChar '}')
+      (opt pseparate >>. map)
+    <!> "map"
+    |>> (Map.ofList >> Mapping)
 
+  pmappingRef := mapping'
 
-  let parser = sequence
-          //<|> mapping ctx indent
-            <!> "flow-collections"
+  let mapping = pmapping
+
+  let parser = sequence <|> mapping <!> "flow-collections"
 
 flowParserRef := Collections.parser
              <|> Scalars.parser

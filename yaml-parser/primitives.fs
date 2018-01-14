@@ -39,7 +39,7 @@ let lineBreak : Parser<_, State> =
   <|> (pchar carriageReturn .>> opt (pchar lineFeed) >>% lineFeed)
   
 let skipLineBreak : Parser<_, State> = 
-      (skipChar lineFeed <!> "lf")
+      (skipChar lineFeed)
   <|> (skipChar carriageReturn .>> optional (skipChar lineFeed))
 
 let manyLineBreak = many lineBreak
@@ -81,8 +81,8 @@ let comments =
   let commentText =   pstring "#"
                   >>. manySatisfy (fun c -> c <> lineFeed && c <> carriageReturn && c <> byteOrderMark)
 
-  let sbComment = opt (separateInLine >>? opt commentText) .>>? (skipLineBreak <|> eof) <!> "sb-comment"
-  let lComment = separateInLine >>? opt commentText .>>? (skipLineBreak <|> eof) <!> "l-comment"
+  let sbComment = opt (separateInLine >>? opt commentText) .>>? (skipLineBreak <|> eof) //<!> "sb-comment"
+  let lComment = separateInLine >>? opt commentText .>>? (skipLineBreak <|> eof) //<!> "l-comment"
 
   (sbComment <|> (lineStart >>% None)) >>? many lComment
   |>> (List.choose id >> List.map trim >> Comment)
