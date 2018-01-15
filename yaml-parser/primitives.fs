@@ -77,6 +77,10 @@ let pnumber : Parser<_, State> = (attempt pfloat) |>> (decimal >> Decimal)
 let manyStringIn (values : #seq<char>) : Parser<string, _> =
   manySatisfy (fun c -> Seq.contains c values)
 
+let spaceChars = [| lineFeed; carriageReturn; space; tabulation |]
+
+let indicator = [| ','; '['; ']'; '{'; '}' |]
+
 let comments = 
   let commentText =   pstring "#"
                   >>. manySatisfy (fun c -> c <> lineFeed && c <> carriageReturn && c <> byteOrderMark)
@@ -114,7 +118,6 @@ let withSameOrHigherIndentation (p : Parser<_, State>) =
     let userState = stream.UserState
     let pos = stream.Position
 
-    printfn "Validation indentation: %i >= %i" pos.Column userState.indent
     if pos.Column >= userState.indent then
       stream.UserState <- { userState with indent = pos.Column }
       let result = p stream
@@ -159,7 +162,6 @@ let withContext ctx p =
       (preturn ())
       p
     <!> sprintf "with context: %A" ctx
-
 
 let indentation minimalIndent = 
   whitespaces

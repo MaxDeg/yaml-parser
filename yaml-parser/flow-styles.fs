@@ -10,6 +10,17 @@ open FParsec
 let private flowParser, flowParserRef = createParserForwardedToRef<Value, State>()
 
 module Scalars =
+  let plainSafe =
+    getUserState >>= fun { context = context } ->
+      match context with 
+      | FlowOut | BlockKey
+      | BlockIn | BlockOut  -> spaceChars |> noneOf <!> "plain-safe-out"
+
+      | FlowIn | FlowKey    -> Array.append spaceChars indicator
+                               |> noneOf
+                               <!> "plain-safe-in"
+
+
   let plain =
     let firstChar = 
           noneOf "[]{},:?-"
@@ -143,7 +154,7 @@ module Collections =
     let pentry = 
       let implicitEntry =
         let separateValue =
-          skipChar ':' >>? followedBy whitespaces1 >>. (pseparate >>. flowParser <|>% Empty) <!> "separate-value"
+          skipChar ':' >>? notFollowedBy Scalars.plainSafe >>. ((pseparate >>? flowParser) <|>% Empty) <!> "separate-value"
         let adjacentValue =
           skipChar ':' >>. (opt pseparate >>? flowParser <|>% Empty) <!> "adjacent-value"
 

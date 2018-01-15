@@ -13,6 +13,15 @@ open FParsec
 open YamlParser
 open YamlParser.Types
 
+Parser.run "{unquoted : 'separate', http://foo.com, 42: , : omitted key,}"
+
+Parser.run @"{
+omitted value:,
+http://foo.com,
+? 42:,
+? 43: ,
+'empty':
+}"
 
 Parser.run @"{
 'adjacent':value,

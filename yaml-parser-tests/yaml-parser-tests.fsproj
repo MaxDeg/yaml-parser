@@ -8,6 +8,7 @@
     <Compile Include="prelude.fs" />
     <Compile Include="flow-scalar.fs" />
     <Compile Include="flow-sequence.fs" />
+    <Compile Include="flow-mapping.fs" />
     <Compile Include="block-sequence.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
