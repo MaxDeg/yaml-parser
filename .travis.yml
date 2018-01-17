@@ -1,0 +1,6 @@
+language: fsharp
+mono: none
+dotnet: 2.1.3
+
+script:
+  - ./build.cmd
