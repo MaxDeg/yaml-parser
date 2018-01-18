@@ -63,7 +63,7 @@ module Collections =
                                      (whitespaces1 >>? withIndentation >>? sequence)
                                      // compact mapping
                                      blockParser
-                                     comments
+                                     preturn Empty .>> comments
                                    ]
 
   let parser = comments .>> pseparate >>. sequence //<|> mapping

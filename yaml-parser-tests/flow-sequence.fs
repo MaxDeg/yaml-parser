@@ -72,4 +72,40 @@ let tests = testList "flow-sequence"
                                     Decimal 5.0m
                                   ]))
                 }
+
+                test "explicit flow-pair" {
+                  testParser parser @"[
+? 'foo
+ bar' : baz
+]"
+                  |> succeed
+                      (Expect.equal
+                        "explicit flow-pair"
+                        (Sequence [ Mapping <| Map.ofList [ String "foo bar", String "baz"] ]))
+                }
+
+                test "implicit flow-pair" {
+                  testParser parser "[ YAML : separate ]"
+                  |> succeed
+                      (Expect.equal
+                        "implicit yaml key with separate value"
+                        (Sequence [ Mapping <| Map.ofList [ String "YAML ", String "separate " ] ]))
+                        
+                  testParser parser "[ : empty key entry ]"
+                  |> succeed
+                      (Expect.equal
+                        "empty key"
+                        (Sequence [ Mapping <| Map.ofList [ Empty, String "empty key entry " ] ]))
+                        
+                  testParser parser "[ {JSON: like}:adjacent ]"
+                  |> succeed
+                      (Expect.equal
+                        "json key"
+                        (Sequence [ 
+                          Mapping <| Map.ofList [ 
+                            (Mapping <| Map.ofList [ String "JSON", String "like" ]),
+                            String "adjacent "
+                                                ]
+                                  ]))
+                }
               ]

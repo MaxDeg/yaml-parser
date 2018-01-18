@@ -155,13 +155,24 @@ let withHigherIndentation (p : Parser<_, State>) =
       stream.BacktrackTo(state)
       Reply(Error, messageError <| sprintf "minimal indentation of %i required" userState.indent)
 
-let withContext ctx p =
-  getUserState >>= fun state ->
-    between
-      (setUserState { state with context = ctx })
-      (preturn ())
-      p
-    <!> sprintf "with context: %A" ctx
+let withContext ctx (p : Parser<_, State>) =
+  fun (stream : CharStream<_>) ->
+    let state = stream.State
+    let userState = stream.UserState
+    let p' =
+      between
+        (setUserState { userState with context = ctx })
+        (preturn ())
+        p
+      <!> sprintf "with context: %A" ctx
+
+    let result = p' stream  
+    if result.Status = Ok then
+      stream.UserState <- userState
+    else
+      stream.BacktrackTo(state)
+      
+    result
 
 let indentation minimalIndent = 
   whitespaces

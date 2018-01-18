@@ -132,12 +132,15 @@ module Scalars =
 
 
 module Collections = 
+  let private flowPairParser, flowPairParserRef = 
+    createParserForwardedToRef<Value, State>()
+  
   let psep =
     skipChar ',' .>> opt pseparate <!> "flow-sep"
 
   let sequence =
     let pitem = 
-      flowParser .>> opt pseparate <!> "flow-seq-item"
+      (flowPairParser <|> flowParser) .>> opt pseparate <!> "flow-seq-item"
     
     let seq =
       withContext FlowIn <| sepEndBy pitem psep
@@ -150,38 +153,52 @@ module Collections =
 
   let private pmapping, pmappingRef = createParserForwardedToRef<Value, State>()
 
-  let private mapping' =
-    let pentry = 
-      let implicitEntry =
-        let separateValue =
-          skipChar ':' >>? notFollowedBy Scalars.plainSafe >>. ((pseparate >>? flowParser) <|>% Empty) <!> "separate-value"
-        let adjacentValue =
-          skipChar ':' >>. (opt pseparate >>? flowParser <|>% Empty) <!> "adjacent-value"
-
-        choice [ (Scalars.jsonParser <|> sequence <|> pmapping <|>% Empty) .>> opt pseparate .>>.? adjacentValue
-                 Scalars.yamlParser .>>.? (opt pseparate >>? separateValue <|>% Empty)
-                 preturn Empty .>>.? separateValue
-               ]
-               <!> "map-entry"
-
-      let explicitEntry =
-        skipChar '?' >>. pseparate >>. (implicitEntry <|>% (Empty, Empty)) <!> "map-explicit-key"
-      
-      (explicitEntry <|> implicitEntry) .>> opt pseparate
+  module internal Mapping =
+    let separateValue =
+      skipChar ':' >>? notFollowedBy Scalars.plainSafe >>. ((pseparate >>? flowParser) <|>% Empty) <!> "separate-value"
     
+    let adjacentValue =
+      skipChar ':' >>. (opt pseparate >>? flowParser <|>% Empty) <!> "adjacent-value"
+
+    let implicitEntry =
+      choice [ (Scalars.jsonParser <|> sequence <|> pmapping <|>% Empty) .>> opt pseparate .>>.? adjacentValue
+               Scalars.yamlParser .>>.? (opt pseparate >>? separateValue <|>% Empty)
+               preturn Empty .>>.? separateValue
+             ]
+             <!> "map-entry"
+
+    let explicitEntry =
+      skipChar '?' >>. pseparate >>. (implicitEntry <|>% (Empty, Empty)) <!> "map-explicit-key"
+      
+    let pentry = 
+      (explicitEntry <|> implicitEntry) .>> opt pseparate 
+
     let map =
       withContext FlowIn <| sepEndBy pentry psep
-    
-    between
-      (skipChar '{')
-      (skipChar '}')
-      (opt pseparate >>. map)
-    <!> "map"
-    |>> (Map.ofList >> Mapping)
 
-  pmappingRef := mapping'
-
+  pmappingRef :=  between
+                    (skipChar '{')
+                    (skipChar '}')
+                    (opt pseparate >>. Mapping.map)
+                  <!> "map"
+                  |>> (Map.ofList >> Mapping)
+                  
   let mapping = pmapping
+
+  let private jsonParser = choice [ sequence
+                                    mapping
+                                    Scalars.jsonParser
+                                  ]
+
+  let private flowPair =
+    choice [ withContext FlowKey Scalars.yamlParser .>>? opt pseparate .>>.? Mapping.separateValue
+             preturn Empty .>>.? Mapping.separateValue
+             withContext FlowKey jsonParser .>>.? Mapping.adjacentValue
+           ]
+           <!> "flow-pair"
+
+  flowPairParserRef := (Mapping.explicitEntry <|> flowPair)
+                       |>> (Array.singleton >> Map.ofArray >> Mapping)
 
   let parser = sequence <|> mapping <!> "flow-collections"
 
