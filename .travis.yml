@@ -1,5 +1,12 @@
 language: csharp
 mono: latest
 
+# dependencies (netcore)
+addons:
+  apt:
+    packages:
+      - libunwind8
+      - msbuild
+
 script:
   - ./build.sh
