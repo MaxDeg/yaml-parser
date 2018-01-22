@@ -13,6 +13,9 @@ open FParsec
 open YamlParser
 open YamlParser.Types
 
+
+Parser.run "{unquoted : 'separate'}"
+
 Parser.run "{unquoted : 'separate', http://foo.com, 42: , : omitted key,}"
 
 Parser.run @"{
@@ -55,6 +58,10 @@ Parser.run @"   - 1
 Parser.run @"- - 'one' # Compact
   - 'two' # sequence"
 
+
+Parser.run @"- one: two # Compact mapping"
+
+
 Parser.run @"? - 1
   - 2
 : 3"
@@ -67,6 +74,12 @@ Parser.run @"- ::vector
 - Up, up, and away!
 - -123
 - http://example.com/foo#bar"
+
+Parser.run @"- [ ::vector,
+  "": - ()"",
+  ""Up, up and away!"",
+  -123,
+  http://example.com/foo#bar ]"
 
 Parser.run @"[
 # my comment
@@ -88,3 +101,7 @@ Parser.run @"[ 1, 2,
 
 Parser.run @"'quoted key':
 - entry"
+
+
+Parser.run @"block mapping:
+ key: value"

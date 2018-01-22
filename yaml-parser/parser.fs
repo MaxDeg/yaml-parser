@@ -13,7 +13,7 @@ parserRef := choice  [ BlockStyle.parser
                        //empty
                      ]
 
-let bareDocument = BlockStyle.parser
+let bareDocument = BlockStyle.parser .>> eof
 
 let run str = 
   runParserOnString

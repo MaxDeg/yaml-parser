@@ -10,66 +10,53 @@ open FParsec
 let private flowParser, flowParserRef = createParserForwardedToRef<Value, State>()
 
 module Scalars =
-  let plainSafe =
-    getUserState >>= fun { context = context } ->
+  let plainSafeFilter context exceptChars c =
       match context with 
       | FlowOut | BlockKey
-      | BlockIn | BlockOut  -> spaceChars |> noneOf <!> "plain-safe-out"
+      | BlockIn | BlockOut  -> 
+          Array.append exceptChars spaceChars
+          |> Array.contains c
+          |> not
 
-      | FlowIn | FlowKey    -> Array.append spaceChars indicator
-                               |> noneOf
-                               <!> "plain-safe-in"
-
+      | FlowIn | FlowKey    -> 
+          [| spaceChars; flowIndicators; exceptChars |]
+          |> Array.concat
+          |> Array.contains c
+          |> not
+          
+  let plainSafe = 
+    getUserState >>= fun { context = context } ->
+      many1Satisfy (plainSafeFilter context [||])
 
   let plain =
-    let firstChar = 
-          noneOf "[]{},:?-"
-      <|> (anyOf ":?-" .>> (notFollowedBy whitespaces1))
-      <!> "firstchar"
-    
-    let acceptedChars charToExclude =
-      let normalChars = 
-        flip
-          Array.contains
-          [| yield '#'
-             yield ':'
-             yield carriageReturn
-             yield lineFeed
-             yield! charToExclude
-          |]
-        >> not
-        |> manySatisfy
-      
-      let exceptionChars =
-            (pstring ":" .>>? notFollowedBy whitespaces1)
-        <|> (pstring "#" .>>? previousCharSatisfies (fun c -> c <> space && c <> tabulation))
-      
-      stringsSepBy normalChars exceptionChars <!> "accepted-char"
-    
-    let safeChar ctx = 
-          whitespaces
-      >>? followedBy firstChar
-      >>. (match ctx with
-          | FlowIn | FlowKey
-          | BlockKey          -> acceptedChars [| '['; ']'; '{'; '}'; ',' |] .>> whitespaces
+    let firstChar =
+      choice [ Array.append spaceChars indicators |> skipNoneOf
+               skipAnyOf ":?-" .>>? followedBy plainSafe
+             ]
+             <!> "plain-first-char"
 
-          | FlowOut | BlockIn
-          | BlockOut          -> acceptedChars [||] .>> whitespaces)
-      <!> "safe-char"
+    let plainChar = 
+      getUserState >>= fun { context = context } ->
+        choice [ many1Satisfy (plainSafeFilter context [| '#'; ':' |])
+                 pchar ':' .>>.? plainSafe |>> (fun (a, b) -> sprintf "%c%s" a b)
+                 previousCharSatisfies (fun c -> not <| Array.contains c spaceChars) >>? pstring "#"
+               ]
+
+    let plainLine =
+      followedBy firstChar
+      >>. many1Strings (whitespaces .>>.? plainChar |>> fun (a, b) -> a + b)
+      <!> "plain-line"
     
     getUserState >>= fun { context = ctx } ->
       match ctx with
-      | BlockIn
-      | BlockOut
-      | FlowIn
-      | FlowOut   ->  withSameOrHigherIndentation <|
-                        stringsSepBy1 (safeChar ctx) ((many1LineBreak |>> (List.map string >> String.concat "")) .>>? checkIndentation)
-                        <!> "multi-line"
+      | FlowOut | FlowIn
+      | BlockOut | BlockIn ->
+          followedBy firstChar
+          >>. stringsSepBy1 plainLine folded
+          |>> String
 
-      | BlockKey
-      | FlowKey   ->  safeChar ctx <!> "single-line"
-      <!> "plain"
-      |>> String
+      | BlockKey | FlowKey ->
+          plainLine |>> String    
 
   let doubleQuoted = 
     between
@@ -81,14 +68,17 @@ module Scalars =
     
   let singleQuoted = 
     let escapedChar = pstring "''" >>% "'"
-    let acceptedChar =  manySatisfy (fun c -> c <> '\'' && c > '\x20' && c <= '\u10FF')
+    let acceptedChar = 
+      manySatisfy (fun c -> c <> '\'' && c > '\x20' && c <= '\u10FF')
 
     let folded =   (opt separateInLine)
                >>? many1 (whitespaces >>? lineBreak <!> "folded-line")
                .>> whitespaces
                <!> "folded"
-               |>> fun s -> if s.Length > 1
-                            then List.skip 1 s |> List.map string |> String.concat ""
+               |>> fun s -> if s.Length > 1 then
+                              List.skip 1 s
+                              |> List.map string
+                              |> String.concat ""
                             else " "
 
     let singleline =
@@ -102,31 +92,36 @@ module Scalars =
 
     
     getUserState >>= fun { context = ctx } ->
-      let text = match ctx with
-                 | FlowIn   | FlowOut
-                 | BlockIn  | BlockOut  -> pipe2
-                                            (stringsSepBy1 singleline folded)
-                                            whitespaces
-                                            (+)
+      let text = 
+        match ctx with
+        | FlowIn   | FlowOut
+        | BlockIn  | BlockOut -> 
+          pipe2
+            (stringsSepBy1 singleline folded)
+            whitespaces
+            (+)
 
-                 | BlockKey | FlowKey   -> stringsSepBy 
-                                            (manySatisfy (fun c -> c <> '\'' && (c = '\x09' || (c >= '\x20' && c <= '\u10FF'))))
-                                            escapedChar
-      between
-        (skipChar '\'')
-        (skipChar '\'')
-        text
+        | BlockKey | FlowKey -> 
+          stringsSepBy 
+            (manySatisfy (fun c -> c <> '\'' && (c = '\x09' || (c >= '\x20' && c <= '\u10FF'))))
+            escapedChar
+
+      let skipSingleQuote = skipChar '\''
+
+      between skipSingleQuote skipSingleQuote text
       <!> "single-quoted"
       |>> String
 
-  let yamlParser = choice [ pnull
-                            ptrue
-                            pfalse
-                            pnumber
-                            plain
-                          ]
+  let yamlParser = 
+    choice [ pnull
+             ptrue
+             pfalse
+             pnumber
+             plain
+           ]
+           <!> "yaml-parser"
 
-  let jsonParser = singleQuoted <|> doubleQuoted
+  let jsonParser = singleQuoted <|> doubleQuoted <!> "json-parser"
   
   let parser = jsonParser <|> yamlParser <!> "scalar"
 
@@ -136,29 +131,42 @@ module Collections =
     createParserForwardedToRef<Value, State>()
   
   let psep =
-    skipChar ',' .>> opt pseparate <!> "flow-sep"
+    skipChar ',' .>> opt pseparate
 
   let sequence =
     let pitem = 
-      (flowPairParser <|> flowParser) .>> opt pseparate <!> "flow-seq-item"
+      (flowPairParser <|> flowParser) .>> opt pseparate
+      <!> "flow-seq-entry"
     
     let seq =
-      withContext FlowIn <| sepEndBy pitem psep
+      getUserState >>= fun { context = context } ->
+      let inFlow = 
+        match context with
+        | FlowOut -> FlowIn
+        | FlowIn -> FlowIn
+        | BlockKey -> FlowKey
+        | FlowKey -> FlowKey
+        | c -> c
 
-    between
-      (skipChar '[')
-      (skipChar ']')
-      (opt pseparate >>. seq)
+      withContext inFlow <| sepEndBy pitem psep
+
+    between (skipChar '[') (skipChar ']') (opt pseparate >>. seq)
+    <!> "flow-sequence"
     |>> Sequence
 
   let private pmapping, pmappingRef = createParserForwardedToRef<Value, State>()
 
   module internal Mapping =
     let separateValue =
-      skipChar ':' >>? notFollowedBy Scalars.plainSafe >>. ((pseparate >>? flowParser) <|>% Empty) <!> "separate-value"
+      skipChar ':'
+        >>? notFollowedBy Scalars.plainSafe
+        >>. ((pseparate >>? flowParser) <|>% Empty)
+        <!> "separate-value"
     
     let adjacentValue =
-      skipChar ':' >>. (opt pseparate >>? flowParser <|>% Empty) <!> "adjacent-value"
+      skipChar ':'
+        >>. (opt pseparate >>? flowParser <|>% Empty)
+        <!> "adjacent-value"
 
     let implicitEntry =
       choice [ (Scalars.jsonParser <|> sequence <|> pmapping <|>% Empty) .>> opt pseparate .>>.? adjacentValue
@@ -168,7 +176,10 @@ module Collections =
              <!> "map-entry"
 
     let explicitEntry =
-      skipChar '?' >>. pseparate >>. (implicitEntry <|>% (Empty, Empty)) <!> "map-explicit-key"
+      skipChar '?'
+        >>. pseparate
+        >>. (implicitEntry <|>% (Empty, Empty))
+        <!> "map-explicit-key"
       
     let pentry = 
       (explicitEntry <|> implicitEntry) .>> opt pseparate 
@@ -176,33 +187,30 @@ module Collections =
     let map =
       withContext FlowIn <| sepEndBy pentry psep
 
-  pmappingRef :=  between
-                    (skipChar '{')
-                    (skipChar '}')
-                    (opt pseparate >>. Mapping.map)
-                  <!> "map"
-                  |>> (Map.ofList >> Mapping)
+  pmappingRef := 
+    between (skipChar '{') (skipChar '}') (opt pseparate >>. Mapping.map)
+      |>> (Map.ofList >> Mapping)
                   
   let mapping = pmapping
 
-  let private jsonParser = choice [ sequence
-                                    mapping
-                                    Scalars.jsonParser
-                                  ]
+  let jsonContent = choice [ sequence
+                             mapping
+                             Scalars.jsonParser
+                           ]
 
   let private flowPair =
     choice [ withContext FlowKey Scalars.yamlParser .>>? opt pseparate .>>.? Mapping.separateValue
+             withContext FlowKey jsonContent .>>? opt pseparate .>>.? Mapping.adjacentValue
              preturn Empty .>>.? Mapping.separateValue
-             withContext FlowKey jsonParser .>>.? Mapping.adjacentValue
            ]
            <!> "flow-pair"
 
-  flowPairParserRef := (Mapping.explicitEntry <|> flowPair)
-                       |>> (Array.singleton >> Map.ofArray >> Mapping)
+  flowPairParserRef :=
+    (Mapping.explicitEntry <|> flowPair)
+      |>> (Array.singleton >> Map.ofArray >> Mapping)
 
   let parser = sequence <|> mapping <!> "flow-collections"
 
-flowParserRef := Collections.parser
-             <|> Scalars.parser
+flowParserRef := Collections.parser <|> Scalars.parser <!> "flow"
 
 let parser = flowParser
