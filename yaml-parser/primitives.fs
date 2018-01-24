@@ -19,9 +19,8 @@ let (<!>) (p: Parser<_,_>) label : Parser<_,_> =
 #endif
     let reply = p stream
 #if INTERACTIVE
-    printfn "%A[%A]: Leaving %s (%A - %A)"
+    printfn "%A: Leaving %s (%A - %A)"
       stream.Position
-      stream.UserState.context
       label
       reply.Status
       reply.Result
@@ -56,8 +55,11 @@ let whitespaces : Parser<_, State> =
 
 let whitespaces1 : Parser<_, State> =
   many1Satisfy (fun c -> c = space || c = tabulation)
+
+let skipWhitespace : Parser<_, State> =
+  skipSatisfy (fun c -> c = space || c = tabulation)
   
-let skipWhitespaces : Parser<_, State> =
+let skipManyWhitespaces : Parser<_, State> =
   skipManySatisfy (fun c -> c = space || c = tabulation)
   
 let skipWhitespaces1 : Parser<_, State> =
@@ -80,155 +82,87 @@ let flowIndicators = [| ','; '['; ']'; '{'; '}' |]
 (* 
   Indentation
 *)
-let checkIndentation =
-  //whitespaces >>.
-  getUserState >>= fun { indent = indent } ->
-  getPosition >>= fun pos ->
-    if pos.Column - 1L = indent then
-      preturn () <!> sprintf "indentation: %i" indent
-    else
-      pzero <!> sprintf "wrong identation %i <> %i" pos.Column indent
-
 let withContext ctx (p : Parser<_, State>) =
   fun (stream : CharStream<_>) ->
     let state = stream.State
     let userState = stream.UserState
     let p' = setUserState { userState with context = ctx } >>? p
-
+    printfn "With context %A" ctx
     let result = p' stream  
     if result.Status = Ok then
       stream.UserState <- userState
     else
       stream.BacktrackTo(state)
+    printfn "Reset context %A" userState.context
       
     result
 
-let indent x p =
-  fun (stream : CharStream<_>) ->
-    let state = stream.State
-    let userState = stream.UserState
-    let pos = stream.Position
-
-    printfn "set indentation to %i" (pos.Column - 1L + x)
-
-    let p' = 
-      setUserState { userState with indent = pos.Column - 1L + x }
-      >>? p
-    
-    let result = p' stream
-    
-    if result.Status = Ok then
-      stream.UserState <- userState
-    else
-      stream.BacktrackTo(state)
-    
-    printfn "Reset indentation to %i" (stream.UserState.indent)  
-    result
-
-let indent1 p = indent 1L p
-
-let indentMany p =
-  whitespaces >>? indent 0L p
-    
-let indent1Many p =
-  whitespaces1 >>? indent 0L p
-
 /// s-indent(n)
-let indent' =
-  fun (stream : CharStream<_>) ->
-    let state = stream.State
-    let userState = stream.UserState
-    let column = stream.Position.Column - 1L
-
-    printfn "Indent' - Ok indentation %i - %i" column userState.indent
-    if column <> userState.indent then
-      let result = whitespaces1 stream
-      if result.Status = Ok then
-        let column' = column + (int64 result.Result.Length)
-        if column' = userState.indent then
-          setUserState { userState with indent = column' } stream
-          |> ignore
-          Reply <| ()
-        else
-          stream.BacktrackTo(state)
-          Reply(Error,
-            expected (sprintf "indentation of %i" userState.indent))
-      else
-        stream.BacktrackTo(state)
-        Reply(Error,
-          expected (sprintf "indentation of %i" userState.indent))
-    else
-      Reply <| ()
-
-let indent1' =
+let indent =
   fun (stream : CharStream<_>) ->
     let state = stream.State
     let userState = stream.UserState
     let column = stream.Position.Column
 
-    if column <> userState.indent then
-      let result = whitespaces1 stream
+    printfn "Indent' - indentation %i - %i" column userState.indent
+    if column < userState.indent then
+      let result = 
+        skipArray (int(userState.indent - column)) skipWhitespace stream
+
       if result.Status = Ok then
-        let column' = column + (int64 result.Result.Length)
-        if column' = userState.indent then
-          setUserState { userState with indent = column' } stream
-          |> ignore
-          Reply <| ()
-        else
-          stream.BacktrackTo(state)
-          Reply(Error,
-            expected (sprintf "indentation of %i" userState.indent))
+        printfn "Indent' - Ok"
+        Reply <| ()
       else
+        printfn "Indent' - Error, failed to read %i white spaces" (userState.indent - column)
         stream.BacktrackTo(state)
-        Reply(Error,
-          expected (sprintf "indentation of %i" userState.indent))
+        Reply(Error, expected 
+          (sprintf "indentation of %i instead of %i" userState.indent column))
+    elif column > userState.indent then
+      stream.BacktrackTo(state)
+      Reply(Error, expected
+        (sprintf "indentation of %i instead of %i" userState.indent column))
     else
-      Reply(Error,
-        expected (sprintf "indentation of %i" userState.indent))
+      Reply <| ()
+
+let indentPlus1 =
+  fun (stream : CharStream<_>) ->
+    let userState = stream.UserState
+    setUserState { userState with indent = userState.indent + 1L } stream
+
+let indentMinus1 =
+  getUserState >>= fun userState ->
+    setUserState { userState with indent = userState.indent - 1L }
+    <!> "Indent decrement of 1"
+
 
 /// s-indent(n+m)
-let indentMore =
-  fun (stream : CharStream<_>) ->
-    let state = stream.State
+let indentMore (stream : CharStream<_>) =
+  let state = stream.State
 
-    whitespaces stream |> ignore
+  skipManyWhitespaces stream |> ignore
+  
+  let userState = stream.UserState
+  let column = stream.Position.Column
 
-    let userState = stream.UserState
-    let column = stream.Position.Column - 1L
+  if column > userState.indent then
+    printfn "IndentMore - Ok indentation %i" column
+    setUserState { userState with indent = column } stream
+    |> ignore
+    Reply <| ()
+  else
+    printfn "IndentMore - Error indentation %i > %i" column userState.indent
 
-    if column >= userState.indent then
-      printfn "IndentMore - Ok indentation %i" column
-      setUserState { userState with indent = column } stream
-      |> ignore
-      Reply <| ()
-    else
-      printfn "IndentMore - Error indentation %i <> %i" column userState.indent
+    stream.BacktrackTo(state)
+    Reply(Error,
+      expected (sprintf "indentation of %i" userState.indent))
 
-      stream.BacktrackTo(state)
-      Reply(Error,
-        expected (sprintf "indentation of %i" userState.indent))
-
-/// s-indent(n+1+m)
-let indentMore1 =
-  fun (stream : CharStream<_>) ->
-    let state = stream.State
-
-    whitespaces1 stream |> ignore
-
-    let userState = stream.UserState
-    let column = stream.Position.Column - 1L
-
-    if column >= userState.indent then
-      printfn "IndentMore1 - Ok indentation %i" column
-      setUserState { userState with indent = column } stream
-      |> ignore
-      Reply <| ()
-    else
-      printfn "IndentMore1 - Error indentation %i <> %i" column userState.indent
-
-      stream.BacktrackTo(state)
-      Reply(Error,
-        expected (sprintf "indentation of %i" userState.indent))
+// s-indent(m)
+let indentMany (stream : CharStream<_>) =
+  skipManyWhitespaces stream |> ignore
+  
+  let userState = stream.UserState
+  let column = stream.Position.Column
+  setUserState { userState with indent = column } stream
 
 
 (*
@@ -250,27 +184,29 @@ let comments =
     //<!> "comment-text"
 
   let sbComment = 
-    opt (separateInLine >>? opt commentText)
+    opt (separateInLine >>. opt commentText)
     .>>? (skipLineBreak <|> eof <!> "sb-comment-break")
     //<!> "sb-comment"
 
   let lComment =
     separateInLine
     >>? opt commentText
-    .>>? (skipLineBreak <|> eof)
-    //<!> "l-comment"
+    .>>? skipLineBreak //<|> eof)
+    <!> "l-comment"
 
   (sbComment <|> (lineStart >>% None)) >>. many lComment
   |>> (List.choose id >> List.map trim >> Comment)
   <!> "comment"
 
+let flowLinePrefix = indent .>> opt separateInLine
+
 let linePrefix =
   getUserState >>= fun { context = context } ->
     match context with
     | BlockOut | BlockIn | BlockKey ->
-        checkIndentation
+        indent
     | FlowOut | FlowIn | FlowKey ->
-        checkIndentation .>>? opt separateInLine
+        flowLinePrefix
     //<!> "line-prefix"
 
 let pseparate =
@@ -281,19 +217,19 @@ let pseparate =
 
   | BlockOut | BlockIn
   | FlowOut  | FlowIn ->
-      (comments .>>? linePrefix) <|> (separateInLine >>% Empty)
+      (comments .>>? flowLinePrefix) <|> (separateInLine >>% Empty)
       <!> "separate"
 
-let emptyLine : Parser<_, State> = whitespaces >>. lineBreak
+let emptyLine : Parser<_, State> = 
+  whitespaces >>. lineBreak
 
 let folded = 
   let blFolded =
-    lineBreak
-    >>. many emptyLine
+    lineBreak >>. many emptyLine
     |>> (List.map string >> String.concat "")
-    //<!> "b-l-folded"
+    <!> "b-l-folded"
   
   opt separateInLine
   >>? withContext FlowIn blFolded
-  .>>? linePrefix
-  //<!> "folded"
+  .>>? flowLinePrefix
+  <!> "folded"

@@ -1,13 +1,14 @@
 module YamlParser.BlockStyle.Collection.Sequence.Tests
 
 open YamlParser.Types
-open YamlParser.BlockStyle
+open YamlParser
 
 open Expecto
 open Expecto.Flip
 
 open Prelude
 
+let parser = Parser.bareDocument
 
 [<Tests>]
 let tests = testList "block-sequence"

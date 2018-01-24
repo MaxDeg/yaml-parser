@@ -1,14 +1,14 @@
 module YamlParser.FlowStyle.Collection.Mapping.Tests
 
 open YamlParser.Types
-open YamlParser.FlowStyle
+open YamlParser
 
 open Expecto
 open Expecto.Flip
 
 open Prelude
 
-let parser = Collections.parser
+let parser = Parser.bareDocument
 
 
 [<Tests>]
@@ -107,7 +107,7 @@ http://foo.com,
                         "Correct mapping read"
                         (Mapping <| Map.ofList [ String "http://foo.com", Empty
                                                  String "omitted value", Empty
-                                                 String "unquoted ", String "separate"
+                                                 String "unquoted", String "separate"
                                                  Empty, String "omitted key"
                                                ]))
                 }
@@ -117,7 +117,11 @@ http://foo.com,
                   testParser parser @"{
 plain text:should fail
 }"
-                  |> fail (fun f -> ())
+                  |> succeed
+                      (Expect.equal
+                        "inline mapping with empty value"
+                        (Mapping <| Map.ofList
+                          [ String "plain text:should fail", Empty ]))
                 }
 
                 test "inline mapping" {
@@ -126,7 +130,7 @@ plain text:should fail
                       (Expect.equal
                         "correct mapping read"
                         (Mapping <| Map.ofList [ String "http://foo.com", Empty
-                                                 String "unquoted ", String "separate"
+                                                 String "unquoted", String "separate"
                                                  Decimal 42m, Empty
                                                  Empty, String "omitted key"
                                                ]))

@@ -1,14 +1,14 @@
 module YamlParser.FlowStyle.Collection.Sequence.Tests
 
 open YamlParser.Types
-open YamlParser.FlowStyle
+open YamlParser
 
 open Expecto
 open Expecto.Flip
 
 open Prelude
 
-let parser = Collections.parser
+let parser = Parser.bareDocument
 
 [<Tests>]
 let tests = testList "flow-sequence"
@@ -22,7 +22,7 @@ let tests = testList "flow-sequence"
                         "Correct sequence read"
                         (Sequence [ String "double quoted"
                                     String "single quoted"
-                                    Sequence [ String "nested " ]
+                                    Sequence [ String "nested" ]
                                   ]))
                 }
 
@@ -89,23 +89,23 @@ let tests = testList "flow-sequence"
                   |> succeed
                       (Expect.equal
                         "implicit yaml key with separate value"
-                        (Sequence [ Mapping <| Map.ofList [ String "YAML ", String "separate " ] ]))
+                        (Sequence [ Mapping <| Map.ofList [ String "YAML", String "separate" ] ]))
                         
                   testParser parser "[ : empty key entry ]"
                   |> succeed
                       (Expect.equal
                         "empty key"
-                        (Sequence [ Mapping <| Map.ofList [ Empty, String "empty key entry " ] ]))
+                        (Sequence [ Mapping <| Map.ofList [ Empty, String "empty key entry" ] ]))
                         
                   testParser parser "[ {JSON: like}:adjacent ]"
                   |> succeed
                       (Expect.equal
                         "json key"
                         (Sequence [ 
-                          Mapping <| Map.ofList [ 
-                            (Mapping <| Map.ofList [ String "JSON", String "like" ]),
-                            String "adjacent "
-                                                ]
+                          Mapping <| Map.ofList
+                            [ (Mapping <| Map.ofList [ String "JSON", String "like" ]),
+                              String "adjacent"
+                            ]
                                   ]))
                 }
               ]

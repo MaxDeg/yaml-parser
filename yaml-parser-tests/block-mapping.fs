@@ -1,14 +1,14 @@
 module YamlParser.BlockStyle.Collection.Mapping.Tests
 
 open YamlParser.Types
-open YamlParser.BlockStyle
+open YamlParser
 
 open Expecto
 open Expecto.Flip
 
 open Prelude
 
-let parser = Collections.parser
+let parser = Parser.bareDocument
 
 [<Tests>]
 let tests = testList "block-mapping"
@@ -46,8 +46,8 @@ let tests = testList "block-mapping"
                         "explicit key with sequence value parsed properly"
                         (Mapping <| Map.ofList
                             [ String "block key",
-                              Sequence [ String "one # Explicit compact"
-                                         String "two # block value"
+                              Sequence [ String "one"
+                                         String "two"
                                        ]
                             ]))
                 }

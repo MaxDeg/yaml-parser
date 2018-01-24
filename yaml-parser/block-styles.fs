@@ -15,34 +15,33 @@ module Collections =
   let private indentedBlockParser, indentedBlockParserRef =
     createParserForwardedToRef<Value, State>()
   
-  let private psep = 
-        whitespaces
-    >>? skipMany1LineBreak
-    >>? skipWhitespaces
-    >>? checkIndentation
-
-  let sequence =
+  module Sequence =
     let seqEntry =
-      indent'
-      >>? pstring "-"
+      pstring "-"
       >>? followedBy whitespaces1
       >>. withContext BlockIn indentedBlockParser
       <!> "seq-entry"
+    
+    let seq =
+      indentMore >>? many1 (indent >>? seqEntry)
+      <!> "seq"
+      |>> Sequence
 
-    indentMore >>? many1 seqEntry
-    <!> "seq"
-    |>> Sequence
+    let compactSeq =
+      seqEntry .>>. many (indent >>? seqEntry)
+      <!> "compact-seq"
+      |>> fun (h, t) -> Sequence(h::t)
 
-  let mapping =
+  module Mapping =
     let explicitEntry =
       let explicitKey =
         skipChar '?' >>. withContext BlockOut indentedBlockParser
-        <!> "map-explicit-key"
+        //<!> "map-explicit-key"
       let explicitValue =
-        indent'
+        indent
         >>? skipChar ':'
         >>. withContext BlockOut indentedBlockParser
-        <!> "map-explicit-value"
+        //<!> "map-explicit-value"
 
       explicitKey .>>.? (explicitValue <|>% Empty)
 
@@ -61,17 +60,25 @@ module Collections =
 
       (implicitKey <|>% Empty) .>>.? implicitValue
 
-    let mapEntry = explicitEntry <|> implicitEntry
+    let mapEntry =
+      explicitEntry <|> implicitEntry
+      <!> "map-entry"
 
-    indentMore >>? many1 mapEntry
-    <!> "mapping"
-    |>> (Map.ofList >> Mapping)
+    let map =
+      indentMore >>? many1 (indent >>? mapEntry)
+      <!> "mapping"
+      |>> (Map.ofList >> Mapping)
+
+    let compactMap =
+      mapEntry .>>. many (indent >>? mapEntry)
+      <!> "mapping"
+      |>> fun (h, t) -> h::t |> Map.ofList |> Mapping
 
   indentedBlockParserRef := 
     choice [ // compact sequence
-             (indentMore1 >>? sequence)
+             (indentMore >>? Sequence.compactSeq)
              // compact mapping
-             (indentMore1 >>? mapping)
+             (indentMore >>? Mapping.compactMap)
              blockParser
              preturn Empty .>> comments
            ]
@@ -81,15 +88,17 @@ module Collections =
     let seqSpaces =
       getUserState >>= fun state ->
       match state.context with
-      | BlockOut -> indent -1L sequence
-      | _ -> sequence
+      | BlockOut -> 
+          indentMinus1 >>? Sequence.seq
+      | _ ->
+          Sequence.seq
 
-    comments >>. (seqSpaces <|> mapping) <!> "block-collection"
+    comments >>. (seqSpaces <|> Mapping.map) <!> "block-collection"
 
 
 let flowInBlock =
-  indent1 (
-    withContext FlowOut (pseparate >>? FlowStyle.parser))
+  indentPlus1
+  >>? withContext FlowOut (pseparate >>? FlowStyle.parser)
   .>> comments
   <!> "flow in block"
 

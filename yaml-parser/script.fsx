@@ -14,6 +14,16 @@ open YamlParser
 open YamlParser.Types
 
 
+Parser.run @"plain key: in-line value
+: # Both empty
+""quoted key"":
+- entry
+"
+
+Parser.run  @"- sun: yellow
+- ? earth: blue
+  : moon: white"
+
 Parser.run "{unquoted : 'separate'}"
 
 Parser.run "{unquoted : 'separate', http://foo.com, 42: , : omitted key,}"
@@ -99,9 +109,30 @@ Parser.run @"[ 1, 2,
 5]"
 
 
+Parser.run @"[ 1,  
+2
+]"
+
+
 Parser.run @"'quoted key':
 - entry"
 
 
 Parser.run @"block mapping:
  key: value"
+
+Parser.run @"? 'block key'
+: - one # Explicit compact
+  - two # block value
+"
+
+Parser.run  @"[ # inline comment
+# on line comment
+1,
+# separation comment
+2    ]"
+
+Parser.run @"[
+? 'foo
+ bar' : baz
+]"

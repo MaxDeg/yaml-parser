@@ -1,14 +1,14 @@
 module YamlParser.FlowStyle.Scalar.Tests
 
 open YamlParser.Types
-open YamlParser.FlowStyle
+open YamlParser
 
 open Expecto
 open Expecto.Flip
 
 open Prelude
 
-let parser = Scalars.parser
+let parser = Parser.bareDocument
 
 [<Tests>]
 let tests = testList "flow-scalar"
