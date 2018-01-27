@@ -35,8 +35,8 @@ let tests = testList "flow-sequence"
                   |> succeed
                       (Expect.equal
                         "comments in list properly parsed"
-                        (Sequence [ Decimal 1.0m
-                                    Decimal 2.0m
+                        (Sequence [ String "1"
+                                    String "2"
                                   ]))
                 }
 
@@ -65,11 +65,11 @@ let tests = testList "flow-sequence"
                   |> succeed 
                       (Expect.equal
                         "multiline ',' parsed properly"
-                        (Sequence [ Decimal 1.0m
-                                    Decimal 2.0m
-                                    Decimal 3.0m
-                                    Decimal 4.0m
-                                    Decimal 5.0m
+                        (Sequence [ String "1"
+                                    String "2"
+                                    String "3"
+                                    String "4"
+                                    String "5"
                                   ]))
                 }
 

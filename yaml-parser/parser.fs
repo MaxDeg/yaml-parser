@@ -1,7 +1,5 @@
 module YamlParser.Parser
 
-open Prelude
-
 open YamlParser
 open YamlParser.Types
 open YamlParser.Primitives

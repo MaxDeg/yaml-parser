@@ -42,10 +42,6 @@ let skipLineBreak : Parser<_, State> =
       (skipChar lineFeed)
   <|> (skipChar carriageReturn .>> optional (skipChar lineFeed))
 
-let manyLineBreak = many lineBreak
-
-let many1LineBreak = many1 lineBreak
-
 let skipManyLineBreak = skipMany skipLineBreak
 
 let skipMany1LineBreak = skipMany1 skipLineBreak
@@ -68,7 +64,6 @@ let skipWhitespaces1 : Parser<_, State> =
 let pnull : Parser<_, State> = stringReturn "null" Null
 let ptrue : Parser<_, State> = stringReturn "true" <| Boolean true
 let pfalse : Parser<_, State> = stringReturn "false" <| Boolean false
-let pnumber : Parser<_, State> = (attempt pfloat) |>> (decimal >> Decimal)
 
 let spaceChars = [| lineFeed; carriageReturn; space; tabulation |]
 
@@ -87,13 +82,13 @@ let withContext ctx (p : Parser<_, State>) =
     let state = stream.State
     let userState = stream.UserState
     let p' = setUserState { userState with context = ctx } >>? p
-    printfn "With context %A" ctx
+    //printfn "With context %A" ctx
     let result = p' stream  
     if result.Status = Ok then
       stream.UserState <- userState
     else
       stream.BacktrackTo(state)
-    printfn "Reset context %A" userState.context
+    //printfn "Reset context %A" userState.context
       
     result
 
@@ -104,16 +99,16 @@ let indent =
     let userState = stream.UserState
     let column = stream.Position.Column
 
-    printfn "Indent' - indentation %i - %i" column userState.indent
+    //printfn "Indent' - indentation %i - %i" column userState.indent
     if column < userState.indent then
       let result = 
         skipArray (int(userState.indent - column)) skipWhitespace stream
 
       if result.Status = Ok then
-        printfn "Indent' - Ok"
+        //printfn "Indent' - Ok"
         Reply <| ()
       else
-        printfn "Indent' - Error, failed to read %i white spaces" (userState.indent - column)
+        //printfn "Indent' - Error, failed to read %i white spaces" (userState.indent - column)
         stream.BacktrackTo(state)
         Reply(Error, expected 
           (sprintf "indentation of %i instead of %i" userState.indent column))
@@ -145,12 +140,12 @@ let indentMore (stream : CharStream<_>) =
   let column = stream.Position.Column
 
   if column > userState.indent then
-    printfn "IndentMore - Ok indentation %i" column
+    //printfn "IndentMore - Ok indentation %i" column
     setUserState { userState with indent = column } stream
     |> ignore
     Reply <| ()
   else
-    printfn "IndentMore - Error indentation %i > %i" column userState.indent
+    //printfn "IndentMore - Error indentation %i > %i" column userState.indent
 
     stream.BacktrackTo(state)
     Reply(Error,
@@ -221,12 +216,13 @@ let pseparate =
       <!> "separate"
 
 let emptyLine : Parser<_, State> = 
-  whitespaces >>. lineBreak
+  whitespaces >>? lineBreak
 
 let folded = 
   let blFolded =
-    lineBreak >>. many emptyLine
-    |>> (List.map string >> String.concat "")
+    (lineBreak >>? many1 emptyLine
+    |>> (List.map string >> String.concat ""))
+    <|> (lineBreak >>% " ")
     <!> "b-l-folded"
   
   opt separateInLine

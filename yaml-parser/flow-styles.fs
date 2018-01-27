@@ -1,7 +1,5 @@
 module YamlParser.FlowStyle
 
-open Prelude
-
 open YamlParser.Types
 open YamlParser.Primitives
 
@@ -66,13 +64,66 @@ module Scalars =
       | BlockKey | FlowKey ->
           plainOneLine |>> String    
 
-  let doubleQuoted = 
-    between
-      (skipChar '"')
-      (skipChar '"')
-      (manySatisfy (fun c -> c <> '"'))
-    <!> "double-quoted"
-    |>> String
+  let doubleQuoted =
+    let escapedChar =
+      let chars =
+        [| '0'; 'a'; 'b'; 't'; 'n'; 'v'; 'f'; 'r'
+           'e'; '\t'; ' '; '"'; '/'; '\\'; 'N'
+           '_'; 'L'; 'P'; 'x'; 'u'; 'U'
+        |]
+
+      pstring "\\" >>? anyOf chars
+
+    let jsonChar =
+      '\x09' :: [ '\x20' .. '\u10FF' ]
+      |> List.except [ '\\'; '"' ]
+      |> anyOf
+      
+    let jsonCharNoSpace =
+      [ '\x21' .. '\u10FF' ]
+      |> List.except [ '\\'; '"' ]
+      |> anyOf
+
+    let oneLine =
+      manyChars (escapedChar <|> jsonChar)
+
+    let inLine =
+      let s = escapedChar <|> jsonCharNoSpace
+      manyStrings <| attempt (pipe2 whitespaces (many1Chars s) (+))
+
+    let nextLine =
+      let chars = escapedChar <|> jsonCharNoSpace |>> string
+      let pbreak =
+        attempt (pipe5
+          whitespaces
+          (pstring "\\") // ignore
+          lineBreak // ignore
+          (withContext FlowIn (manyChars emptyLine))
+          flowLinePrefix
+          (fun a _ _ d _ -> a + d))
+        <|> folded
+
+      let p =
+        (pbreak .>>.? opt (pipe2 chars inLine (+)))
+        |>> fun (a, b) -> a + Option.defaultValue "" b
+      
+      pipe2 (many1Strings p) whitespaces (+)
+
+    let text =
+      function
+      | FlowOut | FlowIn
+      | BlockOut | BlockIn ->
+          pipe2 inLine (nextLine <|> whitespaces) (+)
+      | FlowKey | BlockKey ->
+          oneLine
+    
+    getUserState >>= fun { context = ctx } ->
+      between
+        (skipChar '"')
+        (skipChar '"')
+        (text ctx)
+      <!> "double-quoted"
+      |>> String
     
   let singleQuoted = 
     let escapedChar = pstring "''" >>% "'"
@@ -124,7 +175,6 @@ module Scalars =
     choice [ pnull
              ptrue
              pfalse
-             pnumber
              plain
            ]
            <!> "yaml-parser"

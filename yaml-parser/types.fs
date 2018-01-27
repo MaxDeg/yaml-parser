@@ -5,7 +5,6 @@ type Value =
     | Sequence of Value list
     | String of string
     | Boolean of bool
-    | Decimal of decimal
     | Comment of string list
     | Null
     | Empty

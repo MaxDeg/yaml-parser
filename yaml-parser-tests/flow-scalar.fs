@@ -21,7 +21,7 @@ let tests = testList "flow-scalar"
 
                   parsePlainText "::vector"
                   parsePlainText @"Up, up, and away!"
-                  parsePlain @"-123" (Decimal -123.0m)
+                  parsePlain @"-123" (String "-123")
                   parsePlainText @"http://example.com/foo#bar"
                 }
 
@@ -43,13 +43,7 @@ space'"
                         "flow folded properly parsed"
                         (String "trimmed\n\n\nas space"))
                   
-                  testParser parser @"'
-  foo 
- 
-     bar
-
-  baz
-'"
+                  testParser parser "'\r\n  foo \r\n\r\n  \t bar\r\n\r\n  baz\r\n'"
                   |> succeed 
                       (Expect.equal
                         "flow folded properly parsed"
@@ -69,6 +63,40 @@ space'"
                   |> succeed
                       (Expect.equal
                         "multiline properly parsed"
+                        (String " 1st non-empty\n2nd non-empty 3rd non-empty "))
+                }
+
+                test "double quoted string in implicit mapping" {
+                  testParser parser "\"implicit block key\" : [\r\n  \"implicit flow key\" : value,\r\n ]"
+                  |> succeed
+                      (Expect.equal
+                        "implicit mapping"
+                        (Mapping <| Map.ofList
+                          [ String "implicit block key",
+                            Sequence 
+                              [ Mapping <| Map.ofList
+                                  [ String "implicit flow key", String "value" ]
+                              ]
+                          ]))
+                }
+
+                test "double quoted string line break" {
+                  testParser parser "\"\r\n  foo \r\n\r\n  \t bar\r\n\r\n  baz\r\n\""
+                  |> succeed 
+                      (Expect.equal
+                        "foo bar baz line break"
+                        (String " foo\nbar\nbaz "))
+
+                  testParser parser "\"folded \r\nto a space,\t\r\n \r\nto a line feed, or \t\\\r\n \\ \tnon-content\""
+                  |> succeed 
+                      (Expect.equal
+                        "folded to a space or line feed or non-content"
+                        (String "folded to a space,\nto a line feed, or \t \tnon-content"))
+
+                  testParser parser "\" 1st non-empty\r\n\r\n 2nd non-empty \r\n\t 3rd non-empty \""
+                  |> succeed
+                      (Expect.equal
+                        "non-empty 1,2,3"
                         (String " 1st non-empty\n2nd non-empty 3rd non-empty "))
                 }
               ]

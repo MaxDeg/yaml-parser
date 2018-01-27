@@ -23,10 +23,10 @@ bool: true,
                   |> succeed 
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping <| Map.ofList [ String "number", Decimal 1.m
+                        (Mapping <| Map.ofList [ String "number", String "1"
                                                  String "bool", Boolean true
                                                  String "readable", String "value"
-                                                 Decimal 42.m, String "universal answer"
+                                                 String "42", String "universal answer"
                                                ]))
                 }
 
@@ -89,8 +89,8 @@ http://foo.com,
                         (Mapping <| Map.ofList [ String "empty", Empty
                                                  String "http://foo.com", Empty
                                                  String "omitted value", Empty
-                                                 Decimal 42.m, Empty
-                                                 Decimal 43.m, Empty
+                                                 String "42", Empty
+                                                 String "43", Empty
                                                ]))
                 }
 
@@ -131,7 +131,7 @@ plain text:should fail
                         "correct mapping read"
                         (Mapping <| Map.ofList [ String "http://foo.com", Empty
                                                  String "unquoted", String "separate"
-                                                 Decimal 42m, Empty
+                                                 String "42", Empty
                                                  Empty, String "omitted key"
                                                ]))
                 }

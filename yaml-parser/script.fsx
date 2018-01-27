@@ -8,11 +8,30 @@
 #load "block-styles.fs"
 #load "parser.fs"
 
-open FParsec
-
 open YamlParser
 open YamlParser.Types
+open FParsec
 
+let showSpecialChars (s: string) =
+  s.Replace("\t", "\\t").Replace("\n", "\\n")
+
+Parser.run @"""implicit block key"" : [
+  ""implicit flow key"" : value,
+ ]"
+
+Parser.run "\"\r\n  foo \r\n\r\n  \t bar\r\n\r\n  baz\r\n\""
+|> function 
+| Success(String s, _, _) -> showSpecialChars s
+
+Parser.run "\"folded \r\nto a space,\t\r\n \r\nto a line feed, or \t\\\r\n \\ \tnon-content\""
+|> function 
+| Success(String s, _, _) -> showSpecialChars s
+
+
+Parser.run @""" 1st non-empty
+
+ 2nd non-empty 
+  3rd non-empty """
 
 Parser.run @"plain key: in-line value
 : # Both empty

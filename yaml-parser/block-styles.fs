@@ -93,7 +93,7 @@ module Collections =
       | _ ->
           Sequence.seq
 
-    comments >>. (seqSpaces <|> Mapping.map) <!> "block-collection"
+    comments >>? (seqSpaces <|> Mapping.map) <!> "block-collection"
 
 
 let flowInBlock =
