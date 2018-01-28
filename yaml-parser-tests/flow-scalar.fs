@@ -71,10 +71,10 @@ space'"
                   |> succeed
                       (Expect.equal
                         "implicit mapping"
-                        (Mapping <| Map.ofList
+                        (Mapping
                           [ String "implicit block key",
                             Sequence 
-                              [ Mapping <| Map.ofList
+                              [ Mapping
                                   [ String "implicit flow key", String "value" ]
                               ]
                           ]))

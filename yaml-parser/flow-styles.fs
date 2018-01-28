@@ -1,5 +1,7 @@
 module YamlParser.FlowStyle
 
+open System
+
 open YamlParser.Types
 open YamlParser.Primitives
 
@@ -64,6 +66,9 @@ module Scalars =
       | BlockKey | FlowKey ->
           plainOneLine |>> String    
 
+  let private jsonChar c = 
+    c = '\x09' || not (Char.IsControl c)
+
   let doubleQuoted =
     let escapedChar =
       let chars =
@@ -72,27 +77,40 @@ module Scalars =
            '_'; 'L'; 'P'; 'x'; 'u'; 'U'
         |]
 
-      pstring "\\" >>? anyOf chars
+      pstring "\\" >>? anyOf chars 
+      |>> function
+      | '0' -> "\0"
+      | 'a' -> "\a"
+      | 'b' -> "\b"
+      | 't' -> "\t"
+      | 'n' -> "\n"
+      | 'v' -> "\v"
+      | 'f' -> "\f"
+      | 'r' -> "\r"
+      | 'e' -> "\e"
+      | '\t' -> "\\t"
+      | 'N' -> "\N"
+      | 'L' -> "\L"
+      | 'P' -> "\P"
+      | 'x' -> "\x"
+      | 'u' -> "\u"
+      | 'U' -> "\U"
+      | c -> string c
 
-    let jsonChar =
-      '\x09' :: [ '\x20' .. '\u10FF' ]
-      |> List.except [ '\\'; '"' ]
-      |> anyOf
-      
-    let jsonCharNoSpace =
-      [ '\x21' .. '\u10FF' ]
-      |> List.except [ '\\'; '"' ]
-      |> anyOf
+    let nonSpaceChar =
+      (escapedChar
+      <|> many1Satisfy (fun c -> c <> '\\' && c <> '"' && c <> '\x20' && jsonChar c))
 
     let oneLine =
-      manyChars (escapedChar <|> jsonChar)
+      manyStrings
+        (escapedChar
+        <|> many1Satisfy (fun c -> c <> '\\' && c <> '"' && jsonChar c))
 
     let inLine =
-      let s = escapedChar <|> jsonCharNoSpace
-      manyStrings <| attempt (pipe2 whitespaces (many1Chars s) (+))
+      let s = nonSpaceChar
+      manyStrings <| attempt (pipe2 whitespaces (many1Strings s) (+))
 
     let nextLine =
-      let chars = escapedChar <|> jsonCharNoSpace |>> string
       let pbreak =
         attempt (pipe5
           whitespaces
@@ -104,7 +122,7 @@ module Scalars =
         <|> folded
 
       let p =
-        (pbreak .>>.? opt (pipe2 chars inLine (+)))
+        (pbreak .>>.? opt (pipe2 nonSpaceChar inLine (+)))
         |>> fun (a, b) -> a + Option.defaultValue "" b
       
       pipe2 (many1Strings p) whitespaces (+)
@@ -144,7 +162,7 @@ module Scalars =
       stringsSepBy1
         (manyStrings
           (whitespaces
-           .>>.? (many1Satisfy (fun c -> c <> '\'' && c > '\x20' && c <= '\u10FF'))
+           .>>.? (many1Satisfy (fun c -> c <> '\'' && jsonChar c))
            |>> fun (a, b) -> a + b))
         escapedChar
       <!> "singleline"
@@ -214,6 +232,7 @@ module Collections =
 
   let private pmapping, pmappingRef = createParserForwardedToRef<Value, State>()
 
+  [<AutoOpen>]
   module internal Mapping =
     let separateValue =
       skipChar ':'
@@ -247,8 +266,8 @@ module Collections =
       <!> "flow-map"
 
   pmappingRef := 
-    between (skipChar '{') (skipChar '}') (opt pseparate >>. Mapping.map)
-      |>> (Map.ofList >> Mapping)
+    between (skipChar '{') (skipChar '}') (opt pseparate >>. map)
+    |>> Mapping
                   
   let mapping = pmapping
 
@@ -258,15 +277,15 @@ module Collections =
                            ]
 
   let private flowPair =
-    choice [ (withContext FlowKey Scalars.yamlParser) .>>? opt pseparate .>>.? Mapping.separateValue
-             (withContext FlowKey jsonContent) .>>? opt pseparate .>>.? Mapping.adjacentValue
-             preturn Empty .>>.? Mapping.separateValue
+    choice [ (withContext FlowKey Scalars.yamlParser) .>>? opt pseparate .>>.? separateValue
+             (withContext FlowKey jsonContent) .>>? opt pseparate .>>.? adjacentValue
+             preturn Empty .>>.? separateValue
            ]
            <!> "flow-pair"
 
   flowPairParserRef :=
-    (Mapping.explicitEntry <|> flowPair)
-    |>> (Array.singleton >> Map.ofArray >> Mapping)
+    (explicitEntry <|> flowPair)
+    |>> (Array.singleton >> Mapping)
 
   let parser = sequence <|> mapping <!> "flow-collections"
 

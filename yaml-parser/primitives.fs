@@ -99,16 +99,16 @@ let indent =
     let userState = stream.UserState
     let column = stream.Position.Column
 
-    //printfn "Indent' - indentation %i - %i" column userState.indent
+    printfn "Indent' - indentation %i - %i" column userState.indent
     if column < userState.indent then
       let result = 
         skipArray (int(userState.indent - column)) skipWhitespace stream
 
       if result.Status = Ok then
-        //printfn "Indent' - Ok"
+        printfn "Indent' - Ok"
         Reply <| ()
       else
-        //printfn "Indent' - Error, failed to read %i white spaces" (userState.indent - column)
+        printfn "Indent' - Error, failed to read %i white spaces" (userState.indent - column)
         stream.BacktrackTo(state)
         Reply(Error, expected 
           (sprintf "indentation of %i instead of %i" userState.indent column))
@@ -119,10 +119,12 @@ let indent =
     else
       Reply <| ()
 
-let indentPlus1 =
-  fun (stream : CharStream<_>) ->
-    let userState = stream.UserState
-    setUserState { userState with indent = userState.indent + 1L } stream
+let indentPlus1 p =
+  getUserState >>= fun userState ->
+    setUserState { userState with indent = userState.indent + 1L }
+    >>? p
+    .>> setUserState { userState with indent = userState.indent }
+    <!> sprintf "indentPlus1: %i" userState.indent
 
 let indentMinus1 =
   getUserState >>= fun userState ->
@@ -140,12 +142,12 @@ let indentMore (stream : CharStream<_>) =
   let column = stream.Position.Column
 
   if column > userState.indent then
-    //printfn "IndentMore - Ok indentation %i" column
+    printfn "IndentMore - Ok indentation %i" column
     setUserState { userState with indent = column } stream
     |> ignore
     Reply <| ()
   else
-    //printfn "IndentMore - Error indentation %i > %i" column userState.indent
+    printfn "IndentMore - Error indentation %i > %i" column userState.indent
 
     stream.BacktrackTo(state)
     Reply(Error,
@@ -170,18 +172,18 @@ let lineStart =
     
 let separateInLine = skipWhitespaces1 <|> lineStart
 
-let comments = 
-  let commentText =
-    pstring "#"
-    >>. manySatisfy (fun c -> c <> lineFeed
-                           && c <> carriageReturn
-                           && c <> byteOrderMark)
-    //<!> "comment-text"
+let commentText =
+  pstring "#"
+  >>. manySatisfy (fun c -> c <> lineFeed
+                         && c <> carriageReturn
+                         && c <> byteOrderMark)
+  //<!> "comment-text"
 
+let comment, comments = 
   let sbComment = 
     opt (separateInLine >>. opt commentText)
-    .>>? (skipLineBreak <|> eof <!> "sb-comment-break")
-    //<!> "sb-comment"
+    .>>? (skipLineBreak <|> eof)
+    <!> "sb-comment"
 
   let lComment =
     separateInLine
@@ -189,6 +191,9 @@ let comments =
     .>>? skipLineBreak //<|> eof)
     <!> "l-comment"
 
+  // single comment
+  (sbComment |>> function Some(Some c) -> Some <| Comment [ c ] | _ -> None),
+  //  multi comments
   (sbComment <|> (lineStart >>% None)) >>. many lComment
   |>> (List.choose id >> List.map trim >> Comment)
   <!> "comment"
@@ -208,11 +213,11 @@ let pseparate =
   getUserState >>= fun { context = ctx } ->
   match ctx with
   | BlockKey | FlowKey -> 
-      separateInLine >>% Empty
+      separateInLine >>% None
 
   | BlockOut | BlockIn
   | FlowOut  | FlowIn ->
-      (comments .>>? flowLinePrefix) <|> (separateInLine >>% Empty)
+      (comments .>>? flowLinePrefix |>> Some) <|> (separateInLine >>% None)
       <!> "separate"
 
 let emptyLine : Parser<_, State> = 

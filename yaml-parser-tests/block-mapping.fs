@@ -18,9 +18,9 @@ let tests = testList "block-mapping"
                   |> succeed 
                       (Expect.equal
                         "simple implicit key mapping"
-                        (Mapping <| Map.ofList
+                        (Mapping
                           [ String "block mapping", 
-                            Mapping <| Map.ofList 
+                            Mapping 
                               [ String "key", String "value"
                               ] 
                           ]))
@@ -31,7 +31,7 @@ let tests = testList "block-mapping"
                   |> succeed
                       (Expect.equal
                         "empty value node parsed properly"
-                        (Mapping <| Map.ofList
+                        (Mapping
                             [ String "explicit key", Empty
                             ]))
                 }
@@ -44,7 +44,7 @@ let tests = testList "block-mapping"
                   |> succeed
                       (Expect.equal
                         "explicit key with sequence value parsed properly"
-                        (Mapping <| Map.ofList
+                        (Mapping
                             [ String "block key",
                               Sequence [ String "one"
                                          String "two"
@@ -61,7 +61,7 @@ let tests = testList "block-mapping"
                   |> succeed
                       (Expect.equal
                         "all implicit key parsed properly"
-                         (Mapping <| Map.ofList
+                         (Mapping
                             [ String "plain key", String "in-line value"
                               Empty, Empty
                               String "quoted key",
@@ -76,12 +76,12 @@ let tests = testList "block-mapping"
                   |> succeed 
                       (Expect.equal
                         "compact mapping in sequence parsed properly"
-                        (Sequence [ Mapping <| Map.ofList 
+                        (Sequence [ Mapping 
                                       [ String "sun", String "yellow" ]
-                                    Mapping <| Map.ofList 
-                                      [ Mapping <| Map.ofList 
+                                    Mapping 
+                                      [ Mapping 
                                           [ String "earth", String "blue" ],
-                                        Mapping <| Map.ofList 
+                                        Mapping 
                                           [ String "moon", String "white" ]
                                       ]
                                   ]))

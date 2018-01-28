@@ -81,7 +81,7 @@ let tests = testList "flow-sequence"
                   |> succeed
                       (Expect.equal
                         "explicit flow-pair"
-                        (Sequence [ Mapping <| Map.ofList [ String "foo bar", String "baz"] ]))
+                        (Sequence [ Mapping [ String "foo bar", String "baz"] ]))
                 }
 
                 test "implicit flow-pair" {
@@ -89,21 +89,21 @@ let tests = testList "flow-sequence"
                   |> succeed
                       (Expect.equal
                         "implicit yaml key with separate value"
-                        (Sequence [ Mapping <| Map.ofList [ String "YAML", String "separate" ] ]))
+                        (Sequence [ Mapping [ String "YAML", String "separate" ] ]))
                         
                   testParser parser "[ : empty key entry ]"
                   |> succeed
                       (Expect.equal
                         "empty key"
-                        (Sequence [ Mapping <| Map.ofList [ Empty, String "empty key entry" ] ]))
+                        (Sequence [ Mapping [ Empty, String "empty key entry" ] ]))
                         
                   testParser parser "[ {JSON: like}:adjacent ]"
                   |> succeed
                       (Expect.equal
                         "json key"
                         (Sequence [ 
-                          Mapping <| Map.ofList
-                            [ (Mapping <| Map.ofList [ String "JSON", String "like" ]),
+                          Mapping
+                            [ (Mapping [ String "JSON", String "like" ]),
                               String "adjacent"
                             ]
                                   ]))

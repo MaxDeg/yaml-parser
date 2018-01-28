@@ -4,7 +4,6 @@ open YamlParser.Types
 
 open FParsec
 open Expecto
-open Expecto.Flip
 
 let succeed f = function
                 | Success(result, _, _) -> f result
@@ -16,4 +15,11 @@ let fail f = function
                                         |> Tests.failtest
              | Failure(error, _, _)  -> f error
 
-let testParser p = runParserOnString p { indent = 0L; context = BlockOut } ""
+let testParser p = 
+  runParserOnString
+    p
+    { indent      = 0L
+      indentType  = AutoDetect
+      context     = BlockOut
+      chomping    = None
+    } ""

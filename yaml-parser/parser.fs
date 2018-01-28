@@ -16,7 +16,9 @@ let bareDocument = BlockStyle.parser .>> eof
 let run str = 
   runParserOnString
     bareDocument
-    { indent  = 0L
-      context = BlockIn }
+    { indent      = 0L
+      indentType  = AutoDetect
+      context     = BlockIn
+      chomping    = None }
     "" // stream name
     str

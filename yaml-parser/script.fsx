@@ -15,6 +15,48 @@ open FParsec
 let showSpecialChars (s: string) =
   s.Replace("\t", "\\t").Replace("\n", "\\n")
 
+Parser.run "\"folded \r\nto a space,\t\r\n \r\nto a line feed, or \t\\\r\n \\ \tnon-content\""
+|> function 
+| Success(String s, _, _) -> showSpecialChars s
+
+
+Parser.run @"- | # Empty header
+ literal
+- |1 # Indentation indicator
+  folded
+- |+ # Chomping indicator
+ keep
+
+- |1- # Both indicators
+  strip"
+
+Parser.run "| # Empty header\r\n literal"
+|> function 
+| Success(String s, _, _) -> showSpecialChars s
+
+Parser.run "|5 # Indentation indicator\r\n     folded"
+|> function 
+| Success(String s, _, _) -> showSpecialChars s
+
+Parser.run "|+ # Chomping indicator\r\nkeep\r\n"
+|> function 
+| Success(String s, _, _) -> showSpecialChars s
+
+
+Parser.run "|1- # Both indicatorsr\r\n strip"
+|> function 
+| Success(String s, _, _) -> showSpecialChars s
+
+Parser.run "|\r\n literal\r\n \ttext\r\n"
+|> function 
+| Success(String s, _, _) -> showSpecialChars s
+
+Parser.run "\"they’re planning to travel.\""
+
+Parser.run "\"one tab \\t later\""
+Parser.run "#only a comment"
+
+
 Parser.run @"""implicit block key"" : [
   ""implicit flow key"" : value,
  ]"

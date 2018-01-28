@@ -23,11 +23,11 @@ bool: true,
                   |> succeed 
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping <| Map.ofList [ String "number", String "1"
-                                                 String "bool", Boolean true
-                                                 String "readable", String "value"
-                                                 String "42", String "universal answer"
-                                               ]))
+                        (Mapping [ String "number", String "1"
+                                   String "bool", Boolean true
+                                   String "readable", String "value"
+                                   String "42", String "universal answer"
+                                ]))
                 }
 
 
@@ -39,9 +39,9 @@ bool: true,
                   |> succeed 
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping <| Map.ofList [ String "adjacent", String "value"
-                                                 String "readable", String "value"
-                                               ]))
+                        (Mapping [ String "adjacent", String "value"
+                                   String "readable", String "value"
+                                ]))
                 }
 
 
@@ -52,7 +52,7 @@ bool: true,
                   |> succeed 
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping <| Map.ofList [ Empty, Empty
+                        (Mapping [ Empty, Empty
                                                ]))
                   
                   testParser parser @"{
@@ -61,7 +61,7 @@ bool: true,
                   |> succeed 
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping <| Map.ofList [ Empty, String "no key"
+                        (Mapping [ Empty, String "no key"
                                                ]))
 
                   testParser parser @"{
@@ -70,7 +70,7 @@ bool: true,
                   |> succeed 
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping <| Map.ofList [ Empty, String "omitted key"
+                        (Mapping [ Empty, String "omitted key"
                                                ]))
                 }
 
@@ -86,12 +86,12 @@ http://foo.com,
                   |> succeed 
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping <| Map.ofList [ String "empty", Empty
-                                                 String "http://foo.com", Empty
-                                                 String "omitted value", Empty
-                                                 String "42", Empty
-                                                 String "43", Empty
-                                               ]))
+                        (Mapping [ String "empty", Empty
+                                   String "http://foo.com", Empty
+                                   String "omitted value", Empty
+                                   String "42", Empty
+                                   String "43", Empty
+                                ]))
                 }
 
 
@@ -105,11 +105,11 @@ http://foo.com,
                   |> succeed
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping <| Map.ofList [ String "http://foo.com", Empty
-                                                 String "omitted value", Empty
-                                                 String "unquoted", String "separate"
-                                                 Empty, String "omitted key"
-                                               ]))
+                        (Mapping [ String "http://foo.com", Empty
+                                   String "omitted value", Empty
+                                   String "unquoted", String "separate"
+                                   Empty, String "omitted key"
+                                ]))
                 }
 
 
@@ -120,7 +120,7 @@ plain text:should fail
                   |> succeed
                       (Expect.equal
                         "inline mapping with empty value"
-                        (Mapping <| Map.ofList
+                        (Mapping
                           [ String "plain text:should fail", Empty ]))
                 }
 
@@ -129,10 +129,10 @@ plain text:should fail
                   |> succeed
                       (Expect.equal
                         "correct mapping read"
-                        (Mapping <| Map.ofList [ String "http://foo.com", Empty
-                                                 String "unquoted", String "separate"
-                                                 String "42", Empty
-                                                 Empty, String "omitted key"
-                                               ]))
+                        (Mapping [ String "http://foo.com", Empty
+                                   String "unquoted", String "separate"
+                                   String "42", Empty
+                                   Empty, String "omitted key"
+                                ]))
                 }
               ]
