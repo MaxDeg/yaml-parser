@@ -68,6 +68,9 @@ module Scalars =
 
   let private jsonChar c = 
     c = '\x09' || not (Char.IsControl c)
+    
+  let private jsonNonSpaceChar c = 
+    c <> space && c <> tabulation && not (Char.IsControl c)
 
   let doubleQuoted =
     let escapedChar =
@@ -99,7 +102,7 @@ module Scalars =
 
     let nonSpaceChar =
       (escapedChar
-      <|> many1Satisfy (fun c -> c <> '\\' && c <> '"' && c <> '\x20' && jsonChar c))
+      <|> many1Satisfy (fun c -> c <> '\\' && c <> '"' && jsonNonSpaceChar c))
 
     let oneLine =
       manyStrings
@@ -162,7 +165,7 @@ module Scalars =
       stringsSepBy1
         (manyStrings
           (whitespaces
-           .>>.? (many1Satisfy (fun c -> c <> '\'' && jsonChar c))
+           .>>.? (many1Satisfy (fun c -> c <> '\'' && jsonNonSpaceChar c))
            |>> fun (a, b) -> a + b))
         escapedChar
       <!> "singleline"

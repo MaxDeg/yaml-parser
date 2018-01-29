@@ -11,6 +11,7 @@
     <Compile Include="flow-mapping.fs" />
     <Compile Include="block-sequence.fs" />
     <Compile Include="block-mapping.fs" />
+    <Compile Include="block-scalar.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>

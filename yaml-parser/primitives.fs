@@ -99,7 +99,7 @@ let indent =
     let userState = stream.UserState
     let column = stream.Position.Column
 
-    printfn "Indent' - indentation %i - %i" column userState.indent
+    // printfn "Indent' - indentation %i - %i" column userState.indent
     if column < userState.indent then
       let result = 
         skipArray (int(userState.indent - column)) skipWhitespace stream
@@ -108,7 +108,7 @@ let indent =
         printfn "Indent' - Ok"
         Reply <| ()
       else
-        printfn "Indent' - Error, failed to read %i white spaces" (userState.indent - column)
+        // printfn "Indent' - Error, failed to read %i white spaces" (userState.indent - column)
         stream.BacktrackTo(state)
         Reply(Error, expected 
           (sprintf "indentation of %i instead of %i" userState.indent column))
@@ -142,12 +142,12 @@ let indentMore (stream : CharStream<_>) =
   let column = stream.Position.Column
 
   if column > userState.indent then
-    printfn "IndentMore - Ok indentation %i" column
+    // printfn "IndentMore - Ok indentation %i" column
     setUserState { userState with indent = column } stream
     |> ignore
     Reply <| ()
   else
-    printfn "IndentMore - Error indentation %i > %i" column userState.indent
+    // printfn "IndentMore - Error indentation %i > %i" column userState.indent
 
     stream.BacktrackTo(state)
     Reply(Error,
