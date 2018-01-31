@@ -8,12 +8,10 @@ open Expecto.Flip
 
 open Prelude
 
-let parser = Parser.bareDocument
-
 [<Tests>]
 let tests = testList "block-sequence"
               [ test "simple number sequence" {
-                  testParser parser @"- 1
+                  Parser.run @"- 1
 - 2"
                   |> succeed 
                       (Expect.equal
@@ -24,7 +22,7 @@ let tests = testList "block-sequence"
                 }
 
                 test "multi type sequence with item leading space" {
-                  testParser parser @"- 1
+                  Parser.run @"- 1
 -   true
 - 3"
                   |> succeed
@@ -37,7 +35,7 @@ let tests = testList "block-sequence"
                 }
 
                 test "number sequence with initial indentation" {
-                  testParser parser @"   - 1
+                  Parser.run @"   - 1
    - 2"
                   |> succeed
                       (Expect.equal
@@ -48,7 +46,7 @@ let tests = testList "block-sequence"
                 }
 
                 test "sequence of compact sequence" {
-                  testParser parser @"- - 'one' # Compact
+                  Parser.run @"- - 'one' # Compact
   - 'two' # sequence"
                   |> succeed
                       (Expect.equal
@@ -60,7 +58,7 @@ let tests = testList "block-sequence"
                 }
 
                 test "sequence of scalar types" {
-                  testParser parser @"- ::vector
+                  Parser.run @"- ::vector
 - Up, up, and away!
 - -123
 - http://example.com/foo#bar"

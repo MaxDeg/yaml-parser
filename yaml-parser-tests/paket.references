@@ -1,2 +1,4 @@
-Expecto
-FParsec
+group test
+  Expecto
+  Http.fs
+  Newtonsoft.Json

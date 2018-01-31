@@ -8,12 +8,10 @@ open Expecto.Flip
 
 open Prelude
 
-let parser = Parser.bareDocument
-
 [<Tests>]
 let tests = testList "flow-sequence"
               [ test "multi-kind items" {
-                  testParser parser @"[
+                  Parser.run @"[
 ""double quoted"", 'single quoted',
    [ nested ]
 ]"
@@ -27,7 +25,7 @@ let tests = testList "flow-sequence"
                 }
 
                 test "with comments inside" {
-                  testParser parser @"[ # inline comment
+                  Parser.run @"[ # inline comment
 # on line comment
 1,
 # separation comment
@@ -41,7 +39,7 @@ let tests = testList "flow-sequence"
                 }
 
                 test "playing with ','" {
-                  testParser parser "[ 'one', two, ]"
+                  Parser.run "[ 'one', two, ]"
                   |> succeed
                       (Expect.equal
                         "final ',' is properly parsed"
@@ -49,7 +47,7 @@ let tests = testList "flow-sequence"
                                     (String "two")
                                   ]))
                     
-                  testParser parser "['three'   ,'four']"
+                  Parser.run "['three'   ,'four']"
                   |> succeed
                       (Expect.equal
                         "spaces before ',' properly parsed"
@@ -57,7 +55,7 @@ let tests = testList "flow-sequence"
                                     (String "four")
                                   ]))
                                       
-                  testParser parser @"[ 1, 2,
+                  Parser.run @"[ 1, 2,
 3
 , 4
 ,
@@ -74,7 +72,7 @@ let tests = testList "flow-sequence"
                 }
 
                 test "explicit flow-pair" {
-                  testParser parser @"[
+                  Parser.run @"[
 ? 'foo
  bar' : baz
 ]"
@@ -85,19 +83,19 @@ let tests = testList "flow-sequence"
                 }
 
                 test "implicit flow-pair" {
-                  testParser parser "[ YAML : separate ]"
+                  Parser.run "[ YAML : separate ]"
                   |> succeed
                       (Expect.equal
                         "implicit yaml key with separate value"
                         (Sequence [ Mapping [ String "YAML", String "separate" ] ]))
                         
-                  testParser parser "[ : empty key entry ]"
+                  Parser.run "[ : empty key entry ]"
                   |> succeed
                       (Expect.equal
                         "empty key"
                         (Sequence [ Mapping [ Empty, String "empty key entry" ] ]))
                         
-                  testParser parser "[ {JSON: like}:adjacent ]"
+                  Parser.run "[ {JSON: like}:adjacent ]"
                   |> succeed
                       (Expect.equal
                         "json key"

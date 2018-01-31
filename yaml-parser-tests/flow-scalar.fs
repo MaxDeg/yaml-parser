@@ -8,13 +8,11 @@ open Expecto.Flip
 
 open Prelude
 
-let parser = Parser.bareDocument
-
 [<Tests>]
 let tests = testList "flow-scalar"
               [ test "parsing plain text" {
                   let parsePlain text expect = 
-                    testParser parser text
+                    Parser.run text
                     |> succeed (Expect.equal "proper plain scalar" expect)
                     
                   let parsePlainText text = parsePlain text (String text)
@@ -26,13 +24,13 @@ let tests = testList "flow-scalar"
                 }
 
                 test "parse folded" {
-                  testParser parser "'trimmed\r\n  \r\n \r\n\r\nas\r\nspace'"
+                  Parser.run "'trimmed\r\n  \r\n \r\n\r\nas\r\nspace'"
                   |> succeed
                       (Expect.equal
                         "flow folded properly parsed"
                         (String "trimmed\n\n\nas space"))
 
-                  testParser parser @"'trimmed
+                  Parser.run @"'trimmed
 
 
 
@@ -43,7 +41,7 @@ space'"
                         "flow folded properly parsed"
                         (String "trimmed\n\n\nas space"))
                   
-                  testParser parser "'\r\n  foo \r\n\r\n  \t bar\r\n\r\n  baz\r\n'"
+                  Parser.run "'\r\n  foo \r\n\r\n  \t bar\r\n\r\n  baz\r\n'"
                   |> succeed 
                       (Expect.equal
                         "flow folded properly parsed"
@@ -51,7 +49,7 @@ space'"
                 }
 
                 test "single quoted with single quote inside" {
-                  testParser parser "'here''s to \"quotes\"'"
+                  Parser.run "'here''s to \"quotes\"'"
                   |> succeed
                       (Expect.equal
                         "with single quote inside properly parsed"
@@ -59,7 +57,7 @@ space'"
                 }
 
                 test "single quoted multiline" {
-                  testParser parser "' 1st non-empty\r\n\r\n 2nd non-empty\r\n\t3rd non-empty '"
+                  Parser.run "' 1st non-empty\r\n\r\n 2nd non-empty\r\n\t3rd non-empty '"
                   |> succeed
                       (Expect.equal
                         "multiline properly parsed"
@@ -67,7 +65,7 @@ space'"
                 }
 
                 test "double quoted string in implicit mapping" {
-                  testParser parser "\"implicit block key\" : [\r\n  \"implicit flow key\" : value,\r\n ]"
+                  Parser.run "\"implicit block key\" : [\r\n  \"implicit flow key\" : value,\r\n ]"
                   |> succeed
                       (Expect.equal
                         "implicit mapping"
@@ -81,19 +79,19 @@ space'"
                 }
 
                 test "double quoted string line break" {
-                  testParser parser "\"\r\n  foo \r\n\r\n  \t bar\r\n\r\n  baz\r\n\""
+                  Parser.run "\"\r\n  foo \r\n\r\n  \t bar\r\n\r\n  baz\r\n\""
                   |> succeed 
                       (Expect.equal
                         "foo bar baz line break"
                         (String " foo\nbar\nbaz "))
 
-                  testParser parser "\"folded \r\nto a space,\t\r\n \r\nto a line feed, or \t\\\r\n \\ \tnon-content\""
+                  Parser.run "\"folded \r\nto a space,\t\r\n \r\nto a line feed, or \t\\\r\n \\ \tnon-content\""
                   |> succeed 
                       (Expect.equal
                         "folded to a space or line feed or non-content"
                         (String "folded to a space,\nto a line feed, or \t \tnon-content"))
 
-                  testParser parser "\" 1st non-empty\r\n\r\n 2nd non-empty \r\n\t 3rd non-empty \""
+                  Parser.run "\" 1st non-empty\r\n\r\n 2nd non-empty \r\n\t 3rd non-empty \""
                   |> succeed
                       (Expect.equal
                         "non-empty 1,2,3"

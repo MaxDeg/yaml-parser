@@ -53,7 +53,7 @@ module Scalars =
 
     let plainNextLines =
       manyStrings
-        (attempt <| pipe3 folded plainChar plainLine (fun a b c -> a + b + c))
+        (attempt <| pipe3 flowFolded plainChar plainLine (fun a b c -> a + b + c))
       <!> "plain-next-lines"
     
     getUserState >>= fun { context = ctx } ->
@@ -122,7 +122,7 @@ module Scalars =
           (withContext FlowIn (manyChars emptyLine))
           flowLinePrefix
           (fun a _ _ d _ -> a + d))
-        <|> folded
+        <|> flowFolded
 
       let p =
         (pbreak .>>.? opt (pipe2 nonSpaceChar inLine (+)))

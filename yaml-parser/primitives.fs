@@ -46,6 +46,9 @@ let skipManyLineBreak = skipMany skipLineBreak
 
 let skipMany1LineBreak = skipMany1 skipLineBreak
 
+let whitespace : Parser<_, State> =
+  satisfy (fun c -> c = space || c = tabulation)
+
 let whitespaces : Parser<_, State> =
   manySatisfy (fun c -> c = space || c = tabulation)
 
@@ -105,7 +108,7 @@ let indent =
         skipArray (int(userState.indent - column)) skipWhitespace stream
 
       if result.Status = Ok then
-        printfn "Indent' - Ok"
+        // printfn "Indent' - Ok"
         Reply <| ()
       else
         // printfn "Indent' - Error, failed to read %i white spaces" (userState.indent - column)
@@ -177,7 +180,7 @@ let commentText =
   >>. manySatisfy (fun c -> c <> lineFeed
                          && c <> carriageReturn
                          && c <> byteOrderMark)
-  //<!> "comment-text"
+  <!> "comment-text"
 
 let comment, comments = 
   let sbComment = 
@@ -221,16 +224,16 @@ let pseparate =
       <!> "separate"
 
 let emptyLine : Parser<_, State> = 
-  whitespaces >>? lineBreak
+  whitespaces >>? lineBreak <!> "empty-line"
 
-let folded = 
-  let blFolded =
-    (lineBreak >>? many1 emptyLine
-    |>> (List.map string >> String.concat ""))
-    <|> (lineBreak >>% " ")
-    <!> "b-l-folded"
-  
+let folded =
+  (lineBreak >>? many1 emptyLine
+  |>> (List.map string >> String.concat ""))
+  <|> (lineBreak >>% " ")
+  <!> "b-l-folded"
+
+let flowFolded = 
   opt separateInLine
-  >>? withContext FlowIn blFolded
+  >>? withContext FlowIn folded
   .>>? flowLinePrefix
   <!> "folded"

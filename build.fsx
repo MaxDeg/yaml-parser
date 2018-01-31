@@ -65,7 +65,7 @@ Target "Build" (fun _ ->
     appReferences
     |> Seq.iter (fun p ->
         let dir = System.IO.Path.GetDirectoryName p
-        runDotnet dir "build"
+        runDotnet dir "build --no-restore"
     )
 )
 

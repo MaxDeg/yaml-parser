@@ -8,12 +8,10 @@ open Expecto.Flip
 
 open Prelude
 
-let parser = Parser.bareDocument
-
 [<Tests>]
 let tests = testList "block-mapping"
               [ test "simple block mapping" {
-                  testParser parser @"block mapping:
+                  Parser.run @"block mapping:
  key: value"
                   |> succeed 
                       (Expect.equal
@@ -27,7 +25,7 @@ let tests = testList "block-mapping"
                 }
 
                 test "explicit key with empty value" {
-                  testParser parser @"? explicit key"
+                  Parser.run @"? explicit key"
                   |> succeed
                       (Expect.equal
                         "empty value node parsed properly"
@@ -37,7 +35,7 @@ let tests = testList "block-mapping"
                 }
 
                 test "explicit key with seq value" {
-                  testParser parser @"? 'block key'
+                  Parser.run @"? 'block key'
 : - one # Explicit compact
   - two # block value
 "
@@ -53,7 +51,7 @@ let tests = testList "block-mapping"
                 }
 
                 test "implicit keys" {
-                  testParser parser @"plain key: in-line value
+                  Parser.run @"plain key: in-line value
 : # Both empty
 ""quoted key"":
 - entry
@@ -70,7 +68,7 @@ let tests = testList "block-mapping"
                 }
 
                 test "compact block mapping" {
-                  testParser parser @"- sun: yellow
+                  Parser.run @"- sun: yellow
 - ? earth: blue
   : moon: white"
                   |> succeed 

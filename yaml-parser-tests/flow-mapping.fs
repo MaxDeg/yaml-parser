@@ -8,13 +8,10 @@ open Expecto.Flip
 
 open Prelude
 
-let parser = Parser.bareDocument
-
-
 [<Tests>]
 let tests = testList "flow-mapping"
               [ test "simple mapping" {
-                  testParser parser @"{
+                  Parser.run @"{
 'number': 1,
 bool: true,
 ? 'readable': value,
@@ -32,7 +29,7 @@ bool: true,
 
 
                 test "mapping with adjacent value" {
-                  testParser parser @"{
+                  Parser.run @"{
 'adjacent':value,
 'readable':'value'
 }"
@@ -46,7 +43,7 @@ bool: true,
 
 
                 test "mapping with empty keys" {
-                  testParser parser @"{
+                  Parser.run @"{
 ? 
 }"
                   |> succeed 
@@ -55,7 +52,7 @@ bool: true,
                         (Mapping [ Empty, Empty
                                                ]))
                   
-                  testParser parser @"{
+                  Parser.run @"{
 ? : no key
 }"
                   |> succeed 
@@ -64,7 +61,7 @@ bool: true,
                         (Mapping [ Empty, String "no key"
                                                ]))
 
-                  testParser parser @"{
+                  Parser.run @"{
 : 'omitted key'
 }"
                   |> succeed 
@@ -76,7 +73,7 @@ bool: true,
 
 
                 test "mapping with empty values" {
-                  testParser parser @"{
+                  Parser.run @"{
 'omitted value':,
 http://foo.com,
 ? 42:,
@@ -96,7 +93,7 @@ http://foo.com,
 
 
                 test "mapping with final ','" {
-                  testParser parser @"{
+                  Parser.run @"{
 unquoted : 'separate',
 http://foo.com,
 'omitted value':,
@@ -114,7 +111,7 @@ http://foo.com,
 
 
                 test "no adjacent value with plain key" {
-                  testParser parser @"{
+                  Parser.run @"{
 plain text:should fail
 }"
                   |> succeed
@@ -125,7 +122,7 @@ plain text:should fail
                 }
 
                 test "inline mapping" {
-                  testParser parser "{unquoted : 'separate', http://foo.com, 42: , : omitted key,}"
+                  Parser.run "{unquoted : 'separate', http://foo.com, 42: , : omitted key,}"
                   |> succeed
                       (Expect.equal
                         "correct mapping read"

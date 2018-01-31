@@ -9,49 +9,58 @@
 #load "parser.fs"
 
 open YamlParser
-open YamlParser.Types
-open FParsec
-
-
 
 let showSpecialChars (s: string) =
   s.Replace("\t", "\\t").Replace("\n", "\\n")
 
-Parser.run "\"folded \r\nto a space,\t\r\n \r\nto a line feed, or \t\\\r\n \\ \tnon-content\""
-|> function 
-| Success(String s, _, _) -> showSpecialChars s
+// unit test
+Parser.run ">\r\n folded\r\n text\r\n\r\n"
+
+Parser.run ">1+\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+
+Parser.run ">+1\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+
+
+Parser.run ">-\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+
+// unit test
+
+
+
+showSpecialChars @">
+
+ folded
+ line
+
+ next
+ line
+   * bullet
+
+   * list
+   * lines
+
+ last
+ line
+
+# Comment"
 
 
 Parser.run @"- | # Empty header
  literal
-- |1 # Indentation indicator
   folded
-- |+ # Chomping indicator
  keep
-
-- |1- # Both indicators
   strip"
 
 Parser.run "| # Empty header\r\n literal"
-|> function 
-| Success(String s, _, _) -> showSpecialChars s
 
 Parser.run "|5 # Indentation indicator\r\n     folded"
-|> function 
-| Success(String s, _, _) -> showSpecialChars s
 
 Parser.run "|+ # Chomping indicator\r\nkeep\r\n"
-|> function 
-| Success(String s, _, _) -> showSpecialChars s
 
 
-Parser.run "|1- # Both indicatorsr\r\n strip"
-|> function 
-| Success(String s, _, _) -> showSpecialChars s
+Parser.run "|1 # Both indicatorsr\r\n strip"
 
 Parser.run "|\r\n literal\r\n \ttext\r\n"
-|> function 
-| Success(String s, _, _) -> showSpecialChars s
 
 Parser.run "\"they’re planning to travel.\""
 
@@ -64,12 +73,8 @@ Parser.run @"""implicit block key"" : [
  ]"
 
 Parser.run "\"\r\n  foo \r\n\r\n  \t bar\r\n\r\n  baz\r\n\""
-|> function 
-| Success(String s, _, _) -> showSpecialChars s
 
 Parser.run "\"folded \r\nto a space,\t\r\n \r\nto a line feed, or \t\\\r\n \\ \tnon-content\""
-|> function 
-| Success(String s, _, _) -> showSpecialChars s
 
 
 Parser.run @""" 1st non-empty

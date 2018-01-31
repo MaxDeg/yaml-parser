@@ -8,13 +8,10 @@ open Expecto.Flip
 
 open Prelude
 
-let parser = Parser.bareDocument
-
-
 [<Tests>]
 let tests = testList "block-scalar"
               [ test "literal scalar with auto-detect indent" {
-                  testParser parser "|\r\n literal\r\n \ttext\r\n"
+                  Parser.run "|\r\n literal\r\n \ttext\r\n"
                   |> succeed 
                       (Expect.equal
                         "literal text"
@@ -22,7 +19,15 @@ let tests = testList "block-scalar"
                 }
 
                 test "literal scalar with indent of 1 and strip" {
-                  testParser parser "|1- # Both indicatorsr\r\n strip"
+                  Parser.run "|1- # Both indicatorsr\r\n strip"
+                  |> succeed 
+                      (Expect.equal
+                        "literal text"
+                        (String "strip"))
+                }
+
+                test "literal scalar with strip and indent of 1" {
+                  Parser.run "|-1 # Both indicatorsr\r\n strip"
                   |> succeed 
                       (Expect.equal
                         "literal text"
@@ -30,7 +35,7 @@ let tests = testList "block-scalar"
                 }
 
                 test "literal scalar with keep" {
-                  testParser parser "|+ # Chomping indicator\r\nkeep\r\n"
+                  Parser.run "|+ # Chomping indicator\r\nkeep\r\n"
                   |> succeed 
                       (Expect.equal
                         "literal text"
@@ -38,7 +43,7 @@ let tests = testList "block-scalar"
                 }
 
                 test "literal scalar with indent of 5" {
-                  testParser parser "|5 # Indentation indicator\r\n     folded"
+                  Parser.run "|5 # Indentation indicator\r\n     folded"
                   |> succeed 
                       (Expect.equal
                         "literal text"
@@ -46,13 +51,13 @@ let tests = testList "block-scalar"
                 }
 
                 test "literal scalar with indent of 4 instead of 4" {
-                  testParser parser "|5 # Indentation indicator\r\n    folded"
+                  Parser.run "|5 # Indentation indicator\r\n    folded"
                   |> fail ignore
                 }
                 
                 
                 test "literal scalar with empty header" {
-                  testParser parser "| # Empty header\r\n literal"
+                  Parser.run "| # Empty header\r\n literal"
                   |> succeed 
                       (Expect.equal
                         "literal text"
@@ -60,7 +65,7 @@ let tests = testList "block-scalar"
                 }
                 
                 test "literal scalars with multiple headers" {
-                  testParser parser "- | # Empty header\r\n literal\r\n- |1 # Indentation indicator\r\n  folded\r\n- |+ # Chomping indicator\r\n keep\r\n\r\n- |1- # Both indicators\r\n  strip"
+                  Parser.run "- | # Empty header\r\n literal\r\n- |1 # Indentation indicator\r\n  folded\r\n- |+ # Chomping indicator\r\n keep\r\n\r\n- |1- # Both indicators\r\n  strip"
                   |> succeed 
                       (Expect.equal
                         "literal text"
@@ -69,5 +74,66 @@ let tests = testList "block-scalar"
                                     String "keep\n\n"
                                     String " strip"
                                   ]))
+                }
+                
+                test "folded scalar with empty header" {
+                  Parser.run ">\r\n  folded\r\n  text\r\n\r\n"
+                  |> succeed 
+                      (Expect.equal
+                        "folded text"
+                        (String "folded text\n"))
+                }
+                
+                test "folded scalar with indentation 1 header" {
+                  Parser.run ">1\r\n folded\r\n text\r\n\r\n"
+                  |> succeed 
+                      (Expect.equal
+                        "folded text"
+                        (String "folded text\n"))
+                }
+                
+                test "folded scalar with indentation 2 header, wrong indentation" {
+                  Parser.run ">2\r\n folded\r\n text\r\n\r\n"
+                  |> fail ignore
+                }
+                                
+                test "folded scalar with empty header and multi lines" {
+                  Parser.run ">\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+                  |> succeed 
+                      (Expect.equal
+                        "folded text"
+                        (String "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n"))
+                }
+                
+                test "folded scalar with strip header and multi lines" {
+                  Parser.run ">-\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+                  |> succeed 
+                      (Expect.equal
+                        "folded text"
+                        (String "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line"))
+                }
+                
+                test "folded scalar with keep header and multi lines" {
+                  Parser.run ">+\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+                  |> succeed 
+                      (Expect.equal
+                        "folded text"
+                        (String "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n\n"))
+                }
+                
+                test "folded scalar with indent and keep header" {
+                  Parser.run ">1+\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+                  |> succeed 
+                      (Expect.equal
+                        "folded text"
+                        (String "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n\n"))
+                }
+                
+                test "folded scalar with keep and indent header" {
+                  Parser.run ">+1\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+                  |> succeed 
+                      (Expect.equal
+                        "folded text"
+                        (String "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n\n"))
                 }
               ]

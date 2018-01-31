@@ -1,10 +1,17 @@
 source https://www.nuget.org/api/v2
-framework: netstandard2.0, netcoreapp2.0
 storage: none
+redirects: on
 generate_load_scripts: true
 
-nuget Expecto
 nuget FParsec
+
+group test
+  source https://www.nuget.org/api/v2
+  storage: none
+  
+  nuget Expecto
+  nuget Http.fs
+  nuget Newtonsoft.Json
 
 group build
   source https://www.nuget.org/api/v2

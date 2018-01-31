@@ -22,3 +22,6 @@ let run str =
       chomping    = None }
     "" // stream name
     str
+  |> function
+  | Success(result, _, _) -> Result.Ok result
+  | Failure(error, _, _) -> Result.Error error
