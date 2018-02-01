@@ -1,5 +1,6 @@
 source https://www.nuget.org/api/v2
 storage: none
+framework: auto-detect
 redirects: on
 generate_load_scripts: true
 
@@ -8,6 +9,8 @@ nuget FParsec
 group test
   source https://www.nuget.org/api/v2
   storage: none
+  redirects: on
+  framework: auto-detect
   
   nuget Expecto
   nuget Http.fs
@@ -15,7 +18,7 @@ group test
 
 group build
   source https://www.nuget.org/api/v2
-  framework: net461
+  framework: auto-detect
   generate_load_scripts: false
 
   nuget FAKE

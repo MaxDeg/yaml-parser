@@ -148,43 +148,40 @@ module Scalars =
     
   let singleQuoted = 
     let escapedChar = pstring "''" >>% "'"
-    let acceptedChar = 
-      manySatisfy (fun c -> c <> '\'' && c > '\x20' && c <= '\u10FF')
+    let nonSpaceChar = 
+      (escapedChar
+      <|> many1Satisfy (fun c -> c <> '\'' && jsonNonSpaceChar c))
 
-    let folded =   (opt separateInLine)
-               >>? many1 (whitespaces >>? lineBreak <!> "folded-line")
-               .>> whitespaces
-               <!> "folded"
-               |>> fun s -> if s.Length > 1 then
-                              List.skip 1 s
-                              |> List.map string
-                              |> String.concat ""
-                            else " "
+    let oneLine =
+      manyStrings
+        (escapedChar <|> many1Satisfy (fun c -> c <> '\'' && jsonChar c))
 
-    let singleline =
-      stringsSepBy1
-        (manyStrings
-          (whitespaces
-           .>>.? (many1Satisfy (fun c -> c <> '\'' && jsonNonSpaceChar c))
-           |>> fun (a, b) -> a + b))
-        escapedChar
+    let inLine =
+      manyStrings
+        (whitespaces .>>.?
+        ((many1Satisfy (fun c -> c <> '\'' && jsonNonSpaceChar c))
+        <|> escapedChar)
+        |>> fun (a, b) -> a + b)
       <!> "singleline"
 
+    let multiLine =
+      let nextLine =
+        pipe2
+          flowFolded
+          (opt (pipe2 nonSpaceChar inLine (+)))
+          (fun a b -> a + Option.defaultValue "" b)
+      
+      pipe2 inLine nextLine (+)
     
     getUserState >>= fun { context = ctx } ->
       let text = 
         match ctx with
         | FlowIn   | FlowOut
         | BlockIn  | BlockOut -> 
-          pipe2
-            (stringsSepBy1 singleline folded)
-            whitespaces
-            (+)
+            pipe2 inLine (multiLine <|> whitespaces) (+)
 
         | BlockKey | FlowKey -> 
-          stringsSepBy 
-            (manySatisfy (fun c -> c <> '\'' && (c = '\x09' || (c >= '\x20' && c <= '\u10FF'))))
-            escapedChar
+            oneLine
 
       let skipSingleQuote = skipChar '\''
 

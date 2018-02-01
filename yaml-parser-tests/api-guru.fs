@@ -12,7 +12,9 @@ open YamlParser
 
 [<CLIMutable>]
 type ApiDefinition = 
-  { swaggerYamlUrl: string }
+  { swaggerYamlUrl: string
+    swaggerUrl: string
+  }
 
 [<CLIMutable>]
 type ApiGuruDefinition =
@@ -27,26 +29,34 @@ let downloadAndParse url =
     
     match result with
     | Ok _ -> 
-        printfn "Successfully parsed in %ims" timer.ElapsedMilliseconds
+        printfn "Successfully parsed %s in %ims" url timer.ElapsedMilliseconds
     | Error error -> 
-        Tests.failtest <| sprintf "Error: %A" error
-        //timer.ElapsedMilliseconds
+        Tests.failtest <| sprintf "Error parsing %s: %s" url error
 
   Request.createUrl Get url
   |> Request.responseAsString
   |> Hopac.run
   |> parse
 
+let createList () =
+  Request.createUrl Get "https://api.apis.guru/v2/list.json"
+  |> Request.responseAsString
+  |> Hopac.run
+  |> JsonConvert.DeserializeObject<Dictionary<string, ApiGuruDefinition>>
+  |> Seq.collect (fun d -> 
+        let yamlUrl = d.Value.versions.[d.Value.preferred].swaggerYamlUrl
+        let jsonUrl = d.Value.versions.[d.Value.preferred].swaggerUrl
+
+        [ test (sprintf "try parse yaml api %s" yamlUrl) {
+            downloadAndParse yamlUrl
+          }
+          test (sprintf "try parse yaml api %s" jsonUrl) {
+            downloadAndParse jsonUrl
+          }
+        ])
+  |> Seq.toList
+
 [<Tests>]
 let tests = 
-  testList "api guru tests"
-    [ test "try parse all api on api guru" {         
-        Request.createUrl Get "https://api.apis.guru/v2/list.json"
-        |> Request.responseAsString
-        |> Hopac.run
-        |> JsonConvert.DeserializeObject<Dictionary<string, ApiGuruDefinition>>
-        |> Seq.map (fun d -> d.Value.versions.[d.Value.preferred].swaggerYamlUrl)
-        |> Seq.iter downloadAndParse
-      }
-    ]
+  testList "api guru tests" (createList ())
 
