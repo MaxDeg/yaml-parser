@@ -28,14 +28,6 @@ module Scalars =
           fun _ -> Reply(Error, expected "chomping not defined")
 
   let private chompedEmpty =
-    let lessIndent =
-      getUserState >>= fun { indent = indent } ->
-      getPosition >>= fun pos ->
-        if pos.Column < indent then
-          preturn () <!> "less-indent"
-        else
-          pzero <!> sprintf "indentation should be less than %i" pos.Column
-
     let lessOrEqualIndent =
       getUserState >>= fun { indent = indent } ->
       getPosition >>= fun pos ->
@@ -50,8 +42,9 @@ module Scalars =
         separateInLine >>? opt commentText .>>? skipLineBreak
         <!> "trail-l-comment"
 
-      lessIndent
-      >>. commentText
+      skipManyWhitespaces
+      >>? lessIndent
+      >>? commentText
       .>>. ((skipLineBreak >>. many lComment) <|> (eof >>% []))
       |>> fun (a, b) -> Some a :: b 
                         |> List.choose id
@@ -62,7 +55,7 @@ module Scalars =
     getUserState >>= fun { chomping = chomping } ->
       match chomping with
       | Some Strip | Some Clip ->
-          skipMany (lessOrEqualIndent >>? skipLineBreak)
+          skipMany (skipManyWhitespaces >>? lessOrEqualIndent >>? skipLineBreak)
           >>. opt trailComment
           |>> fun c -> None, c
       | Some Keep ->
@@ -127,12 +120,13 @@ module Scalars =
           | Fixed -> indent
           | AutoDetect -> indentMore
 
-        withContext BlockIn (many emptyLine)
+        withContext BlockIn (skipMany emptyLine)
         >>? indent'
         >>. many1Satisfy chars
         <!> "literal-text-firstline"
     let text =
-      withContext BlockIn (many emptyLine)
+      withContext BlockIn (skipMany emptyLine)
+      <!> "literal-text-skip-empty-lines"
       >>? indent
       >>. many1Satisfy chars
       <!> "literal-text"
@@ -260,7 +254,7 @@ module Collections =
     let implicitEntry =
       let implicitKey = 
         withContext BlockKey
-          ((FlowStyle.Collections.jsonContent <|> FlowStyle.Scalars.yamlParser)
+          ((FlowStyle.Collections.jsonContent <|> FlowStyle.Scalars.plain)
           .>>? opt pseparate)
           <!> "map-implicit-key"
 

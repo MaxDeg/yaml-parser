@@ -8,6 +8,7 @@ type Value =
   | Sequence of Value list * comment: Comment option
   | String of string
   | Boolean of bool
+  | Decimal of decimal
   //| Comment of string list
   | Null
   | Empty

@@ -16,8 +16,8 @@ let tests = testList "block-sequence"
                   |> succeed 
                       (Expect.equal
                         "number list must be parsed properly"
-                        (Sequence [ String "1"
-                                    String "2"
+                        (Sequence [ Decimal 1m
+                                    Decimal 2m
                                   ]))
                 }
 
@@ -28,9 +28,9 @@ let tests = testList "block-sequence"
                   |> succeed
                       (Expect.equal
                         "multi-type sequence"
-                        (Sequence [ String "1"
+                        (Sequence [ Decimal 1m
                                     Boolean true
-                                    String "3"
+                                    Decimal 3m
                                   ]))
                 }
 
@@ -40,8 +40,8 @@ let tests = testList "block-sequence"
                   |> succeed
                       (Expect.equal
                         "number list must be parsed properly"
-                        (Sequence [ String "1"
-                                    String "2"
+                        (Sequence [ Decimal 1m
+                                    Decimal 2m
                                   ]))
                 }
 
@@ -67,7 +67,7 @@ let tests = testList "block-sequence"
                         "number list must be parsed properly"
                         (Sequence [ String "::vector"
                                     String "Up, up, and away!"
-                                    String "-123"
+                                    Decimal -123m
                                     String "http://example.com/foo#bar"
                                   ]))
                 }

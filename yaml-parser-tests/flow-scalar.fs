@@ -19,7 +19,7 @@ let tests = testList "flow-scalar"
 
                   parsePlainText "::vector"
                   parsePlainText @"Up, up, and away!"
-                  parsePlain @"-123" (String "-123")
+                  parsePlain @"-123" (Decimal -123m)
                   parsePlainText @"http://example.com/foo#bar"
                 }
 

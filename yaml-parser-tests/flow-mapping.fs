@@ -20,10 +20,10 @@ bool: true,
                   |> succeed 
                       (Expect.equal 
                         "Correct mapping read"
-                        (Mapping [ String "number", String "1"
+                        (Mapping [ String "number", Decimal 1m
                                    String "bool", Boolean true
                                    String "readable", String "value"
-                                   String "42", String "universal answer"
+                                   Decimal 42m, String "universal answer"
                                 ]))
                 }
 
@@ -86,8 +86,8 @@ http://foo.com,
                         (Mapping [ String "empty", Empty
                                    String "http://foo.com", Empty
                                    String "omitted value", Empty
-                                   String "42", Empty
-                                   String "43", Empty
+                                   Decimal 42m, Empty
+                                   Decimal 43m, Empty
                                 ]))
                 }
 
@@ -128,7 +128,7 @@ plain text:should fail
                         "correct mapping read"
                         (Mapping [ String "http://foo.com", Empty
                                    String "unquoted", String "separate"
-                                   String "42", Empty
+                                   Decimal 42m, Empty
                                    Empty, String "omitted key"
                                 ]))
                 }

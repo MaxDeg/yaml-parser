@@ -2,6 +2,7 @@ module ApiGuru.Tests
 
 open System.Diagnostics
 open System.Collections.Generic
+open System.Text
 
 open Expecto
 open Newtonsoft.Json
@@ -29,31 +30,42 @@ let downloadAndParse url =
     
     match result with
     | Ok _ -> 
-        printfn "Successfully parsed %s in %ims" url timer.ElapsedMilliseconds
+        // if timer.ElapsedMilliseconds > 100L then
+        //   Tests.failtest
+        //   <| sprintf "Parsing time too high parsing %s -> %ims"
+        //       url
+        //       timer.ElapsedMilliseconds
+        // //printfn "Successfully parsed %s in %ims" url timer.ElapsedMilliseconds
+        // else
+          ()
     | Error error -> 
         Tests.failtest <| sprintf "Error parsing %s: %s" url error
 
   Request.createUrl Get url
+  |> Request.responseCharacterEncoding (Encoding.Unicode)
   |> Request.responseAsString
   |> Hopac.run
   |> parse
 
 let createList () =
+  let createTests (d : KeyValuePair<string, ApiGuruDefinition>) =
+    let yamlUrl = d.Value.versions.[d.Value.preferred].swaggerYamlUrl
+    let jsonUrl = d.Value.versions.[d.Value.preferred].swaggerUrl
+
+    [ test (sprintf "try parse yaml api %s" yamlUrl) {
+        downloadAndParse yamlUrl
+      }
+      
+      test (sprintf "try parse yaml api %s" jsonUrl) {
+        downloadAndParse jsonUrl
+      }
+    ]
+  
   Request.createUrl Get "https://api.apis.guru/v2/list.json"
   |> Request.responseAsString
   |> Hopac.run
   |> JsonConvert.DeserializeObject<Dictionary<string, ApiGuruDefinition>>
-  |> Seq.collect (fun d -> 
-        let yamlUrl = d.Value.versions.[d.Value.preferred].swaggerYamlUrl
-        let jsonUrl = d.Value.versions.[d.Value.preferred].swaggerUrl
-
-        [ test (sprintf "try parse yaml api %s" yamlUrl) {
-            downloadAndParse yamlUrl
-          }
-          test (sprintf "try parse yaml api %s" jsonUrl) {
-            downloadAndParse jsonUrl
-          }
-        ])
+  |> Seq.collect createTests
   |> Seq.toList
 
 [<Tests>]

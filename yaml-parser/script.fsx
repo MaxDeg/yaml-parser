@@ -1,6 +1,6 @@
 #time
 
-#load "../.paket/load/netcoreapp2.0/main.group.fsx"
+#load "../.paket/load/netstandard1.6/main.group.fsx"
 #load "prelude.fs"
 #load "types.fs"
 #load "primitives.fs"
@@ -8,10 +8,24 @@
 #load "block-styles.fs"
 #load "parser.fs"
 
+open Prelude
 open YamlParser
 
-let showSpecialChars (s: string) =
-  s.Replace("\t", "\\t").Replace("\n", "\\n")
+let content f = 
+  System.IO.File.ReadAllText(f)
+
+
+content @"C:\Users\mdg\AppData\Local\Temp\swagger.yaml"
+|> Parser.run
+|> function Ok _ -> ignore () | Error e -> printfn "%s" e
+
+content @"C:\Users\mdg\Downloads\swagger.json"
+|> Parser.run
+|> function Ok _ -> ignore () | Error e -> printfn "%s" e
+
+
+Parser.run "' 1st non-empty\r\n\r\n 2nd non-empty\r\n\t3rd non-empty '"
+
 
 // unit test
 Parser.run ">\r\n folded\r\n text\r\n\r\n"
@@ -23,38 +37,52 @@ Parser.run ">+1\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   
 
 Parser.run ">-\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
 
+Parser.run ">\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment"
+
+
 // unit test
 
 Parser.run @"
-PatchOperation:
-  path:
-      $ref: '#/definitions/String'
-      description: 'The <code>op</code> operation ''s target, as identified by a <a href=""https://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-08"">JSON Pointer</a> value that references a location within the targeted resource. For example, if the target resource has an updateable property of <code>{""name"":""value""}</code>, the path for this property is <code>/name</code>. If the <code>name</code> property value is a JSON object (e.g., <code>{""name"": {""child/name"": ""child-value""}}</code>), the path for the <code>child/name</code> property will be <code>/name/child~1name</code>. Any slash (""/"") character appearing in path names must be escaped with ""~1"", as shown in the example above. Each <code>op</code> operation can have only one <code>path</code> associated with it.'
+      description: |
+        Manually emails all the billing documents that are generated from a specified bill run to your customers. 
+
+
+        Bill runs can generate invoices and credit memos based on your [invoice and credit memo generation rule](https://knowledgecenter.zuora.com/CB_Billing/Advanced_AR_Settlement/Credit_and_Debit_Memos/Rules_for_Generating_Invoices_and_Credit_Memos). Credit memos are only available if you have the Advanced AR Settlement feature enabled.
+
+
+        Using this API operation, the billing documents are sent to the email addresses specified in the **To Email** field of the email templates. The email template used for each billing document is set in the **Delivery Options** panel of the **Edit notification** dialog from the Zuora UI. See [Edit Email Templates](https://knowledgecenter.zuora.com/CF_Users_and_Administrators/Notifications/Create_Email_Templates) for more information about how to edit the **To Email** field in the email template.
+
+
+
+
+
+        ## Notes
+          - Even though no field is required in the Request body, you still need to specify `{}` in the request. Otherwise, an error will be returned.
+
+
+          - You can only email posted billing documents.
+          
+          
+          - You must activate the following notifications before emailing invoices and credit memos:
+            - **Manual Email For Invoice | Manual Email For Invoice** 
+            - **Email Credit Memo | Manually email Credit Memo**
+         
+          
+          - To include the invoice PDF in the email, select the **Include Invoice PDF** check box in the **Edit notification** dialog from the Zuora UI. To include the credit memo PDF in the email, select the **Include Credit Memo PDF** check box in the **Edit notification** dialog from the Zuora UI. See [Create and Edit Notifications](https://knowledgecenter.zuora.com/CF_Users_and_Administrators/Notifications/C_Create_Notifications#section_2) for more information.
+
+
+
+          - Zuora sends the email messages based on the email template you set. You can set the email template to use in the **Delivery Options** panel of the **Edit notification** dialog from the Zuora UI. By default, the following templates are used for billing documents:
+            - Invoices: **Invoice Posted Default Email Template**
+            - Credit memos: **Manual Email for Credit Memo Default Template**  
+
+            See [Create and Edit Email Templates](https://knowledgecenter.zuora.com/CF_Users_and_Administrators/Notifications/Create_Email_Templates) for more information.
+          
 "
 
 
-Parser.run @"
-PatchOperation:
-  description: 'A single patch operation to apply to the specified resource. Please refer to http://tools.ietf.org/html/rfc6902#section-4 for an explanation of how each operation is used.'
-  properties:
-    from:
-      $ref: '#/definitions/String'
-      description: 'The <code>copy</code> update operation''s source as identified by a <code>JSON-Pointer</code> value referencing the location within the targeted resource to copy the value from. For example, to promote a canary deployment, you copy the canary deployment ID to the affiliated deployment ID by calling a PATCH request on a <a>Stage</a> resource with <code>""op"":""copy""</code>, <code>""from"":""/canarySettings/deploymentId""</code> and <code>""path"":""/deploymentId""</code>.'
-    op:
-      $ref: '#/definitions/Op'
-      description: ' An update operation to be performed with this PATCH request. The valid value can be <code>add</code>, <code>remove</code>, <code>replace</code> or <code>copy</code>. Not all valid operations are supported for a given resource. Support of the operations depends on specific operational contexts. Attempts to apply an unsupported operation on a resource will return an error message.'
-    path:
-      $ref: '#/definitions/String'
-      description: 'The <code>op</code> operation''s target, as identified by a <a href=""https://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-08"">JSON Pointer</a> value that references a location within the targeted resource. For example, if the target resource has an updateable property of <code>{""name"":""value""}</code>, the path for this property is <code>/name</code>. If the <code>name</code> property value is a JSON object (e.g., <code>{""name"": {""child/name"": ""child-value""}}</code>), the path for the <code>child/name</code> property will be <code>/name/child~1name</code>. Any slash (""/"") character appearing in path names must be escaped with ""~1"", as shown in the example above. Each <code>op</code> operation can have only one <code>path</code> associated with it.'
-    value:
-      $ref: '#/definitions/String'
-      description: 'The new target value of the update operation. It is applicable for the <code>add</code> or <code>replace</code> operation. When using AWS CLI to update a property of a JSON value, enclose the JSON object with a pair of single quotes in a Linux shell, e.g., ''{""a"": ...}''. In a Windows shell, see <a href=""http://docs.aws.amazon.com/cli/latest/userguide/cli-using-param.html#cli-using-param-json"">Using JSON for Parameters</a>.'
-  type: object
-"
 
-
-
-showSpecialChars @">
+showEscaped @">
 
  folded
  line

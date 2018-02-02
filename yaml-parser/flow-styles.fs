@@ -1,5 +1,7 @@
 module YamlParser.FlowStyle
 
+open Prelude
+
 open System
 
 open YamlParser.Types
@@ -56,15 +58,22 @@ module Scalars =
         (attempt <| pipe3 flowFolded plainChar plainLine (fun a b c -> a + b + c))
       <!> "plain-next-lines"
     
+    let tryParse = function
+    | InvariantEqual "null" -> Null
+    | InvariantEqual "true" -> Boolean true
+    | InvariantEqual "false" -> Boolean false
+    | IsDecimal d -> Decimal d
+    | s -> String s
+
     getUserState >>= fun { context = ctx } ->
       match ctx with
       | FlowOut | FlowIn
       | BlockOut | BlockIn ->
           pipe2 plainOneLine plainNextLines (+)
-          |>> String
+          |>> tryParse
 
       | BlockKey | FlowKey ->
-          plainOneLine |>> String    
+          plainOneLine |>> tryParse    
 
   let private jsonChar c = 
     c = '\x09' || not (Char.IsControl c)
@@ -170,15 +179,16 @@ module Scalars =
           flowFolded
           (opt (pipe2 nonSpaceChar inLine (+)))
           (fun a b -> a + Option.defaultValue "" b)
+        <!> "single-quoted-nextline"
       
-      pipe2 inLine nextLine (+)
+      pipe2 inLine (manyStrings nextLine) (+)
     
     getUserState >>= fun { context = ctx } ->
       let text = 
         match ctx with
         | FlowIn   | FlowOut
         | BlockIn  | BlockOut -> 
-            pipe2 inLine (multiLine <|> whitespaces) (+)
+            pipe2 multiLine whitespaces (+)
 
         | BlockKey | FlowKey -> 
             oneLine
@@ -189,17 +199,9 @@ module Scalars =
       <!> "single-quoted"
       |>> String
 
-  let yamlParser = 
-    choice [ pnull
-             ptrue
-             pfalse
-             plain
-           ]
-           <!> "yaml-parser"
-
   let jsonParser = singleQuoted <|> doubleQuoted <!> "json-parser"
   
-  let parser = jsonParser <|> yamlParser <!> "scalar"
+  let parser = jsonParser <|> plain <!> "scalar"
 
 
 module Collections = 
@@ -247,7 +249,7 @@ module Collections =
 
     let implicitEntry =
       choice [ (Scalars.jsonParser <|> sequence <|> pmapping <|>% Empty) .>> opt pseparate .>>.? adjacentValue
-               Scalars.yamlParser .>>.? (opt pseparate >>? separateValue <|>% Empty)
+               Scalars.plain .>>.? (opt pseparate >>? separateValue <|>% Empty)
                preturn Empty .>>.? separateValue
              ]
 
@@ -277,7 +279,7 @@ module Collections =
                            ]
 
   let private flowPair =
-    choice [ (withContext FlowKey Scalars.yamlParser) .>>? opt pseparate .>>.? separateValue
+    choice [ (withContext FlowKey Scalars.plain) .>>? opt pseparate .>>.? separateValue
              (withContext FlowKey jsonContent) .>>? opt pseparate .>>.? adjacentValue
              preturn Empty .>>.? separateValue
            ]

@@ -13,19 +13,19 @@ let parser, parserRef = createParserForwardedToRef<Value, State>()
   Debugging/Tracing operator
 *)
 let (<!>) (p: Parser<_,_>) label : Parser<_,_> =
+#if INTERACTIVE
   fun stream ->
-#if INTERACTIVE
     printfn "%A: Entering %s" stream.Position label
-#endif
     let reply = p stream
-#if INTERACTIVE
     printfn "%A: Leaving %s (%A - %A)"
       stream.Position
       label
       reply.Status
       reply.Result
-#endif
     reply
+#else
+  p
+#endif
 
 
 let space = '\x20'
@@ -63,10 +63,6 @@ let skipManyWhitespaces : Parser<_, State> =
   
 let skipWhitespaces1 : Parser<_, State> =
   skipMany1Satisfy (fun c -> c = space || c = tabulation)
-
-let pnull : Parser<_, State> = stringReturn "null" Null
-let ptrue : Parser<_, State> = stringReturn "true" <| Boolean true
-let pfalse : Parser<_, State> = stringReturn "false" <| Boolean false
 
 let spaceChars = [| lineFeed; carriageReturn; space; tabulation |]
 
@@ -164,6 +160,14 @@ let indentMany (stream : CharStream<_>) =
   let column = stream.Position.Column
   setUserState { userState with indent = column } stream
 
+let lessIndent =
+  getUserState >>= fun { indent = indent } ->
+  getPosition >>= fun pos ->
+    // Column 1 is the lowest possible
+    if pos.Column = 1L || pos.Column < indent then
+      preturn ()
+    else
+      pzero <!> sprintf "indentation should be less than %i" pos.Column
 
 (*
   Basic Structures
@@ -191,7 +195,7 @@ let comment, comments =
   let lComment =
     separateInLine
     >>? opt commentText
-    .>>? skipLineBreak //<|> eof)
+    .>>? skipLineBreak
     <!> "l-comment"
 
   // single comment
@@ -224,7 +228,8 @@ let pseparate =
       <!> "separate"
 
 let emptyLine : Parser<_, State> = 
-  whitespaces >>? lineBreak <!> "empty-line"
+  (linePrefix <|> (skipManyWhitespaces >>? lessIndent))
+  >>? lineBreak <!> "empty-line"
 
 let folded =
   (lineBreak >>? many1 emptyLine
