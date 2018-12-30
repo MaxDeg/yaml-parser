@@ -14,7 +14,7 @@ NUGET
 GROUP test
 REDIRECTS: ON
 STORAGE: NONE
-RESTRICTION: == netstandard2.0
+RESTRICTION: >= netcoreapp2.0
 NUGET
   remote: https://api.nuget.org/v3/index.json
     Argu (5.1)
@@ -77,7 +77,6 @@ NUGET
     runtime.ubuntu.16.04-x64.runtime.native.System.Security.Cryptography.OpenSsl (4.3.3)
     runtime.ubuntu.16.10-x64.runtime.native.System.Security.Cryptography.OpenSsl (4.3.3)
     runtime.ubuntu.18.04-x64.runtime.native.System.Security.Cryptography.OpenSsl (4.3.3)
-    System.Buffers (4.5)
     System.Collections (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
@@ -93,7 +92,7 @@ NUGET
       System.Runtime.Extensions (>= 4.3)
       System.Threading (>= 4.3)
       System.Threading.Tasks (>= 4.3)
-    System.Collections.Immutable (1.5)
+    System.Collections.Immutable (1.5) - restriction: || (&& (>= net45) (>= netcoreapp2.0)) (&& (>= netcoreapp2.0) (< netcoreapp2.1)) (&& (>= netcoreapp2.0) (< netstandard1.1)) (&& (>= netcoreapp2.0) (< netstandard2.0))
     System.Configuration.ConfigurationManager (4.5)
       System.Security.Cryptography.ProtectedData (>= 4.5)
       System.Security.Permissions (>= 4.5)
@@ -142,11 +141,8 @@ NUGET
       System.Resources.ResourceManager (>= 4.3)
       System.Runtime (>= 4.3)
       System.Runtime.Extensions (>= 4.3)
-    System.Memory (4.5.1)
-      System.Buffers (>= 4.4)
-      System.Numerics.Vectors (>= 4.4)
-      System.Runtime.CompilerServices.Unsafe (>= 4.5)
-    System.Numerics.Vectors (4.5)
+    System.Memory (4.5.1) - restriction: && (>= netcoreapp2.0) (< netcoreapp2.1)
+      System.Runtime.CompilerServices.Unsafe (>= 4.5) - restriction: || (&& (>= monotouch) (>= netcoreapp2.0)) (&& (>= net461) (>= netcoreapp2.0)) (&& (>= netcoreapp2.0) (< netcoreapp2.1)) (&& (>= netcoreapp2.0) (< netstandard1.1)) (&& (>= netcoreapp2.0) (< netstandard2.0)) (&& (>= netcoreapp2.0) (>= uap10.1)) (&& (>= netcoreapp2.0) (>= xamarinios)) (&& (>= netcoreapp2.0) (>= xamarinmac)) (&& (>= netcoreapp2.0) (>= xamarintvos)) (&& (>= netcoreapp2.0) (>= xamarinwatchos))
     System.Reflection (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
@@ -154,7 +150,7 @@ NUGET
       System.Reflection.Primitives (>= 4.3)
       System.Runtime (>= 4.3)
     System.Reflection.Metadata (1.6)
-      System.Collections.Immutable (>= 1.5)
+      System.Collections.Immutable (>= 1.5) - restriction: || (&& (>= net45) (>= netcoreapp2.0)) (&& (>= netcoreapp2.0) (< netcoreapp2.1)) (&& (>= netcoreapp2.0) (< netstandard1.1)) (&& (>= netcoreapp2.0) (< netstandard2.0))
     System.Reflection.Primitives (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
@@ -168,7 +164,7 @@ NUGET
     System.Runtime (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
-    System.Runtime.CompilerServices.Unsafe (4.5.2)
+    System.Runtime.CompilerServices.Unsafe (4.5.2) - restriction: || (&& (>= monotouch) (>= netcoreapp2.0)) (&& (>= net461) (>= netcoreapp2.0)) (&& (>= netcoreapp2.0) (< netcoreapp2.1)) (&& (>= netcoreapp2.0) (< netstandard1.1)) (&& (>= netcoreapp2.0) (< netstandard2.0)) (&& (>= netcoreapp2.0) (>= uap10.1)) (&& (>= netcoreapp2.0) (>= xamarinios)) (&& (>= netcoreapp2.0) (>= xamarinmac)) (&& (>= netcoreapp2.0) (>= xamarintvos)) (&& (>= netcoreapp2.0) (>= xamarinwatchos))
     System.Runtime.Extensions (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
@@ -190,6 +186,7 @@ NUGET
       System.Runtime (>= 4.3)
       System.Runtime.Extensions (>= 4.3)
     System.Security.AccessControl (4.5)
+      Microsoft.NETCore.Platforms (>= 2.0)
       System.Security.Principal.Windows (>= 4.5)
     System.Security.Cryptography.Algorithms (4.3.1)
       Microsoft.NETCore.Platforms (>= 1.1)
@@ -242,10 +239,11 @@ NUGET
       System.Threading (>= 4.3)
       System.Threading.Tasks (>= 4.3)
     System.Security.Cryptography.ProtectedData (4.5)
-      System.Memory (>= 4.5)
+      System.Memory (>= 4.5) - restriction: && (>= netcoreapp2.0) (< netcoreapp2.1)
     System.Security.Permissions (4.5)
       System.Security.AccessControl (>= 4.5)
     System.Security.Principal.Windows (4.5.1)
+      Microsoft.NETCore.Platforms (>= 2.0)
     System.Text.Encoding (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)

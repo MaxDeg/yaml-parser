@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard1.6</TargetFrameworks>
+    <TargetFramework>netstandard1.6</TargetFramework>
     <DebugType>portable</DebugType>
   </PropertyGroup>
   <ItemGroup>
@@ -14,5 +14,5 @@
     <Content Include="script.fsx" />
     <Compile Include="parser.fs" />
   </ItemGroup>
-  <Import Project="..\.paket\Paket.Restore.targets" />
+  <Import Project="../.paket/Paket.Restore.targets" />
 </Project>
