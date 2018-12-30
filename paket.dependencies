@@ -1,24 +1,16 @@
-source https://www.nuget.org/api/v2
+source https://api.nuget.org/v3/index.json
 storage: none
-framework: auto-detect
 redirects: on
-generate_load_scripts: true
+framework: netstandard2.0
 
 nuget FParsec
 
 group test
-  source https://www.nuget.org/api/v2
+  source https://api.nuget.org/v3/index.json
   storage: none
   redirects: on
-  framework: auto-detect
+  framework: netstandard2.0
   
   nuget Expecto
   nuget Http.fs
-  nuget Newtonsoft.Json
-
-group build
-  source https://www.nuget.org/api/v2
-  framework: auto-detect
-  generate_load_scripts: false
-
-  nuget FAKE
+  nuget Newtonsoft.json

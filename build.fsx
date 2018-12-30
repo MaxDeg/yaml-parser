@@ -1,87 +1,63 @@
-// --------------------------------------------------------------------------------------
-// FAKE build script
-// --------------------------------------------------------------------------------------
+#r "paket: nuget Fake.Core.Target //"
+#r "paket: nuget Fake.Core.Trace //"
+#r "paket: nuget Fake.Core.Environment //"
+#r "paket: nuget Fake.Core.Process //"
+#r "paket: nuget Fake.DotNet.Cli //"
 
-#r "./packages/build/FAKE/tools/FakeLib.dll"
-
-open Fake
+#load ".fake/build.fsx/intellisense.fsx"
 
 open System
-open System.IO
 
-// --------------------------------------------------------------------------------------
-// Build variables
-// --------------------------------------------------------------------------------------
+open Fake.Core
+open Fake.Core.TargetOperators
 
+open Fake.IO
+open Fake.IO.Globbing.Operators
+
+open Fake.DotNet
+
+// -----------------------------------------------------------------------------
+// -- Variables
+// -----------------------------------------------------------------------------
 let buildDir  = "./build/"
-let appReferences = !! "/**/*.fsproj"
-let dotnetcliVersion = "2.1.4"
-let mutable dotnetExePath = "dotnet"
+let appReferences = !! "./**/*.fsproj"
 
-// --------------------------------------------------------------------------------------
-// Helpers
-// --------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// -- Targets
+// -----------------------------------------------------------------------------
+Target.create "Clean" <| fun _ ->
+    Shell.cleanDir buildDir
 
-let run' timeout cmd args dir =
-    if execProcess (fun info ->
-        info.FileName <- cmd
-        if not (String.IsNullOrWhiteSpace dir) then
-            info.WorkingDirectory <- dir
-        info.Arguments <- args
-    ) timeout |> not then
-        failwithf "Error while running '%s' with args: %s" cmd args
-
-let run = run' System.TimeSpan.MaxValue
-
-let runDotnet workingDir args =
-    let result =
-        ExecProcess (fun info ->
-            info.FileName <- dotnetExePath
-            info.WorkingDirectory <- workingDir
-            info.Arguments <- args) TimeSpan.MaxValue
-    if result <> 0 then failwithf "dotnet %s failed" args
-
-// --------------------------------------------------------------------------------------
-// Targets
-// --------------------------------------------------------------------------------------
-
-Target "Clean" (fun _ ->
-    CleanDirs [buildDir]
-)
-
-Target "InstallDotNetCLI" (fun _ ->
-    dotnetExePath <- DotNetCli.InstallDotNetSDK dotnetcliVersion
-)
-
-Target "Restore" (fun _ ->
+Target.create "Restore" <| fun _ ->
     appReferences
     |> Seq.iter (fun p ->
-        let dir = System.IO.Path.GetDirectoryName p
-        runDotnet dir "restore"
+        DotNet.restore (fun args -> { args with NoCache = true }) p
     )
-)
 
-Target "Build" (fun _ ->
+Target.create "Build" <| fun _ ->
     appReferences
     |> Seq.iter (fun p ->
-        let dir = System.IO.Path.GetDirectoryName p
-        runDotnet dir "build --no-restore"
+        DotNet.build (fun args -> 
+            { args with Common =
+                { args.Common with CustomParams = Some "--no-restore" }
+            }) p
     )
-)
 
-Target "Tests" <| fun _ ->
+Target.create "Tests" <| fun _ ->
     appReferences
     |> Seq.filter (fun p -> p.Contains "tests")
-    |> Seq.iter (fun p -> runDotnet (Path.GetDirectoryName p) "run")
+    |> Seq.iter (fun p -> 
+        DotNet.test (fun args -> { args with NoRestore = true }) p |> ignore)
 
-// --------------------------------------------------------------------------------------
-// Build order
-// --------------------------------------------------------------------------------------
-
+// -----------------------------------------------------------------------------
+// -- Dependencies
+// -----------------------------------------------------------------------------
 "Clean"
-  ==> "InstallDotNetCLI"
   ==> "Restore"
   ==> "Build"
   ==> "Tests"
 
-RunTargetOrDefault "Tests"
+// -----------------------------------------------------------------------------
+// -- Start build
+// -----------------------------------------------------------------------------
+Target.runOrDefault "Tests"
