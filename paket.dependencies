@@ -1,7 +1,7 @@
 source https://api.nuget.org/v3/index.json
 storage: none
 redirects: on
-framework: netstandard2.0
+framework: auto-detect
 
 nuget FParsec
 
@@ -9,7 +9,7 @@ group test
   source https://api.nuget.org/v3/index.json
   storage: none
   redirects: on
-  framework: >= netcoreapp2.0
+  framework: auto-detect
   
   nuget Expecto
   nuget Http.fs
