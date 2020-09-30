@@ -11,11 +11,11 @@ let showEscaped (s : string) =
   s.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t")
 
 
-let (|InvariantEqual|_|) str arg = 
+let (|InvariantEqual|_|) str arg =
   if String.Compare(str, arg, StringComparison.OrdinalIgnoreCase) = 0
     then Some () else None
 
-let (|IsDecimal|_|) str =
+let (|IsDecimal|_|) (str : string) =
   let styles =
     NumberStyles.Float
     ||| NumberStyles.Number
